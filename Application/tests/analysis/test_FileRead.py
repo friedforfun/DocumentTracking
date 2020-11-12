@@ -1,30 +1,44 @@
 from Application.DocuTrace.analysis.fileRead import stream_read_json
-import os
 import pytest
+from unittest.mock import patch, mock_open
 
-key_list = ['ts', 'visitor_uuid', 'visitor_username', 'visitor_source', 'visitor_device', 'visitor_useragent', 'visitor_ip', 'visitor_country',
- 'visitor_referrer', 'env_type', 'env_doc_id', 'env_adid', 'event_type', 'subject_type', 'subject_doc_id', 'subject_page', 'cause_type']
+key_list = ['visitor_country']
 
+mock_file_content = """{"visitor_country": "MX"}"""
 
 def test_iter_stream_read_json():
-    j_iter = stream_read_json(os.path.abspath('./Application/sample_data/issuu_sample.json'))
-    count = 0
-    for i in j_iter:
-        count += 1
-    assert count == 4
+    m = mock_open(read_data=mock_file_content)
+    with patch('Application.DocuTrace.analysis.fileRead.open', m) as _file:
+        j_iter = stream_read_json('path')
+        _file.assert_not_called()
+        count = 0
+        for i in j_iter:
+            count += 1
+        _file.assert_called_once_with('path', 'r')
+        assert count == 1
     
 def test_exception_stream_read_json():
-    j_iter = stream_read_json(os.path.abspath('./Application/sample_data/issuu_sample.json'))
-    count = 0
-    for i in j_iter:
-        count += 1
-    with pytest.raises(StopIteration):
-        next(j_iter)
+    with patch('Application.DocuTrace.analysis.fileRead.open',
+               new=mock_open(read_data=mock_file_content)) as _file:
+        j_iter = stream_read_json('path')
+        _file.assert_not_called()
+        count = 0
+        for i in j_iter:
+            count += 1
+        _file.assert_called_once_with('path', 'r')
+        with pytest.raises(StopIteration):
+            next(j_iter)
+    
 
 def test_dict_stream_read_json():
-    j_iter = stream_read_json(os.path.abspath('./Application/sample_data/issuu_sample.json'))
-    json = next(j_iter)
-    keys = list(json.keys())
-    assert keys == key_list
-    assert json.get('visitor_country') == 'MX'
+    with patch('Application.DocuTrace.analysis.fileRead.open',
+               new=mock_open(read_data=mock_file_content)) as _file:
+        j_iter = stream_read_json('path')
+        _file.assert_not_called()
+        json = next(j_iter)
+        _file.assert_called_once_with('path', 'r')
+        keys = list(json.keys())
+        assert keys == key_list
+        assert json.get('visitor_country') == 'MX'
+    
 
