@@ -23,3 +23,5 @@ def stream_read_json(fname):
                 obj = json.loads(json_str)
                 start_pos += e.pos
                 yield obj
+
+
