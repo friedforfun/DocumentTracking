@@ -6,10 +6,24 @@ from matplotlib import pyplot as plt
 
 class LocationViews(Analyse):
 
-    def __init__(self, fig_dimensions=(14, 12)):
+    def __init__(self, path=None, fig_dimensions=(14, 12)):
+        if path is not None:
+            self.file_iter = stream_read_json(path)
+        else:
+            self.file_iter = None
         self.countries = {}
         self.continents = {}
         self.figsize = fig_dimensions
+        self.counted = False
+
+    def set_read_path(self, path):
+        """Specify the path for LocationViews to read from
+
+        Args:
+            path (str): Path to the datafile
+        """
+        self.file_iter = stream_read_json(path)
+        self.counted = False
 
     def histogram(self):
         ax1 = self.continents_ax()
@@ -17,6 +31,8 @@ class LocationViews(Analyse):
         plt.show()
 
     def countries_ax(self):
+        if not self.counted:
+            self.count_countries()
         fig, ax = plt.subplots(figsize=self.figsize)
         x_ticks = []
         for i, (k, v) in enumerate(self.countries.items()):
@@ -30,6 +46,8 @@ class LocationViews(Analyse):
         return ax
 
     def continents_ax(self):
+        if not self.counted or self.continents is {}:
+            self.count_continents()
         fig, ax = plt.subplots(figsize=self.figsize)
         x_ticks = ['']
         for i, (k, v) in enumerate(self.continents.items()):
@@ -39,29 +57,29 @@ class LocationViews(Analyse):
         ax.set_ylabel('Number of views')
         ax.set_xticklabels(x_ticks, rotation=45)
         #ax.legend()
-        print(x_ticks)
         return ax
 
-    def count_countries(self, path):
-        """Load and count the data
-
-        Args:
-            path (str): Path to the datafile
+    def count_countries(self):
+        """Count the number of occurences of each country
         """
-        j_iter = stream_read_json(path)
+        if self.file_iter is None:
+            raise AttributeError('File iterator not set')
         self.countries = {}
-        for json in j_iter:
+        for json in self.file_iter:
             location = json.get('visitor_country', None)
             if location is not None:
                 current = self.countries.get(location)
                 if current is None:
                     self.countries[location] = 0
                 self.countries[location] += 1
+        self.counted = True
 
 
     def count_continents(self):
-        """Calculate the values for the number of viewers per continent
+        """Count the number of occurences of each continent
         """
+        if not self.counted:
+            self.count_countries
         for code in self.countries:
             name = self.continent_name(code)
             current = self.continents.get(name)
