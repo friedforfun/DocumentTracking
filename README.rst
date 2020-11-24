@@ -21,12 +21,15 @@ The **DocuTrace** module has the following dependencies:
 **Test** requirements:
 - pytest==6.1.2
 
-**Jupyter notebooks** require the following to be installed in the environment:
+For **Jupyter notebooks** these requirements must additionally be installed:
+
 - ipython==7.19.0
 - notebook==6.1.5
 
 To build the **Docs** the following must be installed:
-- Sphinx 3.3
+
+- Sphinx==3.3.1
+- sphinx-rtd-theme==0.5.0
 
 Installation
 ============
@@ -37,8 +40,9 @@ Installation
 
 Command line usage
 ==================
-`<Path to repository>/Documenttracking/Application$ python DocuTrace/main.py -h`
-```
+`<Path to repository>/Application$ python DocuTrace/main.py -h`
+
+
 usage: main.py [-h] -u USER_UUID -d DOC_UUID -t TASK_ID -f FILEPATH [-v [VERBOSE]]
 
 optional arguments:
@@ -55,4 +59,3 @@ Params:
                         Specifies the file name
   -v [VERBOSE], --verbose [VERBOSE]
                         Set a verbose output
-```
