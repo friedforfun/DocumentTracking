@@ -1,91 +1,62 @@
 import pycountry
 import pycountry_convert
 from .abstractClasses import Analyse
-from .fileRead import stream_read_json
-from matplotlib import pyplot as plt
+from .fileRead import ParseFile
+from .plots import Plots
 
-class LocationViews(Analyse):
+class Views(ParseFile, Analyse):
 
-    def __init__(self, path=None, fig_dimensions=(14, 12)):
-        if path is not None:
-            self.file_iter = stream_read_json(path)
-        else:
-            self.file_iter = None
+    def __init__(self, path=None, fig_dimensions=(15, 10)):
+        super().__init__(path)
         self.countries = {}
         self.continents = {}
         self.figsize = fig_dimensions
         self.counted = False
+        self.histo_config = None
 
-    def set_read_path(self, path):
-        """Specify the path for LocationViews to read from
-
-        Args:
-            path (str): Path to the datafile
-        """
-        self.file_iter = stream_read_json(path)
-        self.counted = False
-
-    def histogram(self):
-        ax1 = self.continents_ax()
-        ax2 = self.countries_ax()
-        plt.show()
-
-    def countries_ax(self):
-        if not self.counted:
-            self.count_countries()
-        fig, ax = plt.subplots(figsize=self.figsize)
-        x_ticks = []
-        for i, (k, v) in enumerate(self.countries.items()):
-            ax.bar(i, v, label=k)
-            x_ticks.append(self.country_name(k))
-        ax.set_title('Views from each country')
-        ax.set_ylabel('Number of views')
-        ax.set_xticklabels(x_ticks, rotation=45)
-        #ax.legend()
-
-        return ax
-
-    def continents_ax(self):
-        if not self.counted or self.continents is {}:
-            self.count_continents()
-        fig, ax = plt.subplots(figsize=self.figsize)
-        x_ticks = ['']
-        for i, (k, v) in enumerate(self.continents.items()):
-            ax.bar(i, v, label=k)
-            x_ticks.append(k)
-        ax.set_title('Views from each continent')
-        ax.set_ylabel('Number of views')
-        ax.set_xticklabels(x_ticks, rotation=45)
-        #ax.legend()
-        return ax
-
-    def count_countries(self):
-        """Count the number of occurences of each country
-        """
-        if self.file_iter is None:
-            raise AttributeError('File iterator not set')
-        self.countries = {}
-        for json in self.file_iter:
-            location = json.get('visitor_country', None)
-            if location is not None:
-                current = self.countries.get(location)
-                if current is None:
-                    self.countries[location] = 0
-                self.countries[location] += 1
+    def count(self):
+        self.parse_file([self.count_countries, self.count_continents, self.count_browsers])
         self.counted = True
 
 
-    def count_continents(self):
-        """Count the number of occurences of each continent
+    def sorted(self, reverse=True):
+        """Sort each dict by its values
+
+        Args:
+            reverse (bool, optional): Path to the datafile
         """
-        if not self.counted:
-            self.count_countries
-        for code in self.countries:
-            name = self.continent_name(code)
-            current = self.continents.get(name)
-            if current is None:
-                self.continents[name] = 0
-            self.continents[name] += self.countries.get(code)
+        self.countries = {k: v for k, v in sorted(
+            self.countries.items(), key=lambda item: item[1], reverse=reverse)}
+        self.continents = {k: v for k, v in sorted(
+            self.continents.items(), key=lambda item: item[1], reverse=reverse)}
+
+
+    def count_countries(self, json):
+        """Increment the dictionary counter for the country in json
+        """
+        location = json.get('visitor_country', None)
+        if location is not None:
+            if self.countries.get(location, None) is None:
+                self.countries[location] = 1
+            else:
+                self.countries[location] += 1
+        
+
+    def count_continents(self, json):
+        """Increment the dictionary counter for the continent derived from the country in json
+        """
+        location = json.get('visitor_country', None)
+        if location is not None:
+            continent_name = self.continent_name(location)
+            if self.continents.get(continent_name, None) is None:
+                self.continents[continent_name] = 1
+            else:
+                self.continents[continent_name] += 1
+        
+
+    def count_browsers(self, json):
+        pass
+
 
     def country_name(self, code):
         """Get the country name from its alpha2 code
@@ -120,11 +91,39 @@ class LocationViews(Analyse):
         return cont
 
 
-class BrowserViews(Analyse):
-
-    def __init__(self):
-        pass
-
     def histogram(self):
-        pass
+        if self.histo_config is not None:
+            figure = self.histo_config
+        else:
+            figure = self.configure_figure()
+        Plots(n_rows=len(figure[0]), figsize=self.figsize).histogram(
+            figure[0], figure[1], figure[2], figure[3])
 
+
+    def configure_figure(self, sorted=True, reverse=True, n_continents=None, n_countries=None, show_continents=True, show_countries=True):
+        if sorted:
+            self.sorted(reverse)
+        continents = self.continents
+        countries = self.countries
+        if n_continents is not None:
+            continents = dict(list(self.continents.items())[:n_continents])
+        if n_countries is not None:
+            countries = dict(list(self.countries.items())[:n_countries])
+        data = []
+        titles = []
+        x_labels = []
+        y_labels = []
+        if show_continents:
+            data.append(continents)
+            titles.append('Views from each continent')
+            x_labels.append('')
+            y_labels.append('Continent')
+
+        if show_countries:
+            data.append(countries)
+            titles.append('Views from each country')
+            x_labels.append('')
+            y_labels.append('Country')
+
+        self.histo_config = (data, titles, x_labels, y_labels)
+        return (data, titles, x_labels, y_labels)

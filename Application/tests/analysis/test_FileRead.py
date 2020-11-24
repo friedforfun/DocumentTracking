@@ -1,4 +1,4 @@
-from Application.DocuTrace.analysis.fileRead import stream_read_json
+from DocuTrace.analysis.fileRead import stream_read_json, ParseFile
 import pytest
 from unittest.mock import patch, mock_open
 
@@ -8,7 +8,7 @@ mock_file_content = """{"visitor_country": "MX"}"""
 
 def test_iter_stream_read_json():
     m = mock_open(read_data=mock_file_content)
-    with patch('Application.DocuTrace.analysis.fileRead.open', m) as _file:
+    with patch('DocuTrace.analysis.fileRead.open', m) as _file:
         j_iter = stream_read_json('path')
         _file.assert_not_called()
         count = 0
@@ -17,8 +17,9 @@ def test_iter_stream_read_json():
         _file.assert_called_once_with('path', 'r')
         assert count == 1
     
+
 def test_exception_stream_read_json():
-    with patch('Application.DocuTrace.analysis.fileRead.open',
+    with patch('DocuTrace.analysis.fileRead.open',
                new=mock_open(read_data=mock_file_content)) as _file:
         j_iter = stream_read_json('path')
         _file.assert_not_called()
@@ -31,7 +32,7 @@ def test_exception_stream_read_json():
     
 
 def test_dict_stream_read_json():
-    with patch('Application.DocuTrace.analysis.fileRead.open',
+    with patch('DocuTrace.analysis.fileRead.open',
                new=mock_open(read_data=mock_file_content)) as _file:
         j_iter = stream_read_json('path')
         _file.assert_not_called()
@@ -39,6 +40,28 @@ def test_dict_stream_read_json():
         _file.assert_called_once_with('path', 'r')
         keys = list(json.keys())
         assert keys == key_list
-        assert json.get('visitor_country') == 'MX'
+        assert json.get(key_list[0]) == 'MX'
     
 
+def test_instantiate_ParseFile():
+    m = mock_open(read_data=mock_file_content)
+    with patch('DocuTrace.analysis.fileRead.open', m) as _file:
+        parser = ParseFile('path')
+        _file.assert_not_called()
+
+
+def test_set_read_path_ParseFile():
+    m = mock_open(read_data=mock_file_content)
+    with patch('DocuTrace.analysis.fileRead.open', m) as _file:
+        parser = ParseFile('path')
+        parser.set_read_path('second_path')
+        _file.assert_not_called()
+
+
+def test_apply_fn_ParseFile():
+    m = mock_open(read_data=mock_file_content)
+    with patch('DocuTrace.analysis.fileRead.open', m) as _file:
+        parser = ParseFile('path')
+        def test_fn(json):
+            assert json.get(key_list[0]) == 'MX'
+        parser.parse_file([])
