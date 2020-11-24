@@ -33,7 +33,8 @@ class Plots:
         """
         x_pos = np.arange(0, self.bar_gap*len(data_dict), self.bar_gap)
         ax.bar(x_pos, data_dict.values())
-        plt.xticks(x_pos, data_dict.keys(), rotation=self.x_tick_rotation)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(data_dict.keys(), rotation=self.x_tick_rotation)
         if title is not None:
             ax.set_title(title)
         if y_label is not None:

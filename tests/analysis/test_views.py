@@ -2,8 +2,9 @@ import pytest
 from unittest.mock import patch, mock_open
 from DocuTrace.analysis.views import Views
 
-mock_file_content = '{"visitor_country": "MX"}'
-json_dict = {"visitor_country": "MX"}
+mock_file_content = '{"visitor_country": "MX", "visitor_useragent":"Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3"}'
+json_dict = {"visitor_country": "MX",
+             "visitor_useragent": "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3"}
 
 
 def _setup_Views_class_():
@@ -41,6 +42,12 @@ def test_count_continents():
     assert 'North America' not in views.continents.keys()
     views.count_continents(json_dict)
     assert views.continents['North America'] == 1
+
+def test_count_browsers():
+    views = Views()
+    assert 'Mobile Safari' not in views.browser_families.keys()
+    views.count_browsers(json_dict)
+    assert views.browser_families['Mobile Safari'] == 1
 
 
 def test_country_name():

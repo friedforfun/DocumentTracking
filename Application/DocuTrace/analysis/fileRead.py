@@ -51,5 +51,4 @@ class ParseFile:
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
         for json in self.file_iter:
-            for func in fn_list:
-                func(json)
+            [fn(json) for fn in fn_list]

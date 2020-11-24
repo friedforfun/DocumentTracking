@@ -64,4 +64,12 @@ def test_apply_fn_ParseFile():
         parser = ParseFile('path')
         def test_fn(json):
             assert json.get(key_list[0]) == 'MX'
-        parser.parse_file([])
+        parser.parse_file([test_fn])
+
+
+def test_raise_attributeerr_ParseFile():
+        parser = ParseFile()
+        def test_fn(json):
+            assert json.get(key_list[0]) == 'MX'
+        with pytest.raises(AttributeError):
+            parser.parse_file([test_fn])
