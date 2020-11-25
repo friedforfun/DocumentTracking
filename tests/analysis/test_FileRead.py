@@ -1,4 +1,4 @@
-from DocuTrace.analysis.fileRead import stream_read_json, ParseFile
+from DocuTrace.Analysis.FileRead import stream_read_json, ParseFile
 import pytest
 from unittest.mock import patch, mock_open
 

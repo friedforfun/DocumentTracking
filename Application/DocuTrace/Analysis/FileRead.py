@@ -1,4 +1,5 @@
 import json
+from DocuTrace.Utils.Logging import logger
 
 def stream_read_json(fname):
     """Lazy read json generator
@@ -31,6 +32,7 @@ class ParseFile:
             self.file_iter = stream_read_json(path)
         else:
             self.file_iter = None
+        self.path = path
 
         self.parsed_file = False
 
@@ -50,5 +52,7 @@ class ParseFile:
         """
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
+        logger.info('Begin reading file: {}'.format(self.path))
         for json in self.file_iter:
             [fn(json) for fn in fn_list]
+        logger.info('End reading file: {}'.format(self.path))

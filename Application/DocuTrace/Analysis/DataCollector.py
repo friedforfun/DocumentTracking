@@ -1,17 +1,67 @@
+from functools import total_ordering
 import pycountry
 import pycountry_convert
 from user_agents import parse as ua_parse
-from .abstractClasses import Analyse
-from .fileRead import ParseFile
-from .plots import Plots
+from .AbstractClasses import Analyse
+from .FileRead import ParseFile
+from .Plots import Plots
 
-class Views(ParseFile, Analyse):
+@total_ordering
+class ReadingData:
+    """Stores user uuid, reading time and number of reads.
 
-    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True):
+    Args:
+        uuid (str): User uuid
+        read_time (int, optional): Amount of read time to initialise this user wtih. Defaults to 0.
+        reads (int, optional): Number times this user has read a document. Defaults to 1.
+    """
+    def __init__(self, uuid, read_time=0, reads=1):
+        self.uuid = uuid
+        self.read_time = read_time
+        self.reads = reads
+
+    def new_read(self, read_time):
+        """Used to update the total reading time of this user.
+
+        Args:
+            read_time (int): Read time from a document
+        """
+        self.read_time += read_time
+        self.reads += 1
+
+    def _is_valid_operand(self, other):
+        return(hasattr(other, "read_time") or type(other) == int)
+
+    def __eq__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.read_time == other
+        else:
+            return self.read_time == other.read_time
+
+    def __lt__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.read_time < other
+        else:
+            return self.read_time < other.read_time
+
+    def __repr__(self):
+        return "ReadingData(uuid:%s, Read time:%s, Number of reads:%s)" % (self.uuid, self.read_time, self.reads)
+
+    def __str__(self):
+        return "<uuid:%s, Read time:%s, Number of reads:%s>\n" % (self.uuid, self.read_time, self.reads)
+
+class DataCollector(ParseFile, Analyse):
+
+    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, count_reads=True):
         super().__init__(path)
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
+        self.reading_data = {}
         self.figsize = fig_dimensions
         self.counted = False
         self.histo_config = None
@@ -23,6 +73,8 @@ class Views(ParseFile, Analyse):
             self.count_fns.append(self.count_countries)
         if count_continent:
             self.count_fns.append(self.count_continents)
+        if count_reads:
+            self.count_fns.append(self.count_read_data)
 
 
     def count(self):
@@ -32,20 +84,31 @@ class Views(ParseFile, Analyse):
         self.counted = True
 
 
-    def sorted(self, reverse=True):
+    def sorted(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reading_data=True):
         """Sort each dict by its values
 
         Args:
             reverse (bool, optional): Reverse the sorting order, (reverse=True is descending)
+            sort_countries (bool, optional): Sort countries in self? Defaults to True.
+            sort_continents (bool, optional): Sort continents in self? Defaults to True.
+            sort_browsers (bool, optional): Sort browser data in self? Defaults to True.
+            sort_reading_data (bool, optional): Sort reading data in self? Defaults to True.
         """
-        self.countries = {k: v for k, v in sorted(
-            self.countries.items(), key=lambda item: item[1], reverse=reverse)}
+        if sort_countries:
+            self.countries = {k: v for k, v in sorted(
+                self.countries.items(), key=lambda item: item[1], reverse=reverse)}
 
-        self.continents = {k: v for k, v in sorted(
-            self.continents.items(), key=lambda item: item[1], reverse=reverse)}
+        if sort_continents:
+            self.continents = {k: v for k, v in sorted(
+                self.continents.items(), key=lambda item: item[1], reverse=reverse)}
 
-        self.browser_families = {k: v for k, v in sorted(
-            self.browser_families.items(), key=lambda item: item[1], reverse=reverse)}
+        if sort_browsers:
+            self.browser_families = {k: v for k, v in sorted(
+                self.browser_families.items(), key=lambda item: item[1], reverse=reverse)}
+
+        if sort_reading_data:
+            self.reading_data = {k: v for k, v in sorted(
+                self.reading_data.items(), key=lambda item: item[1], reverse=reverse)}
 
 
     def count_countries(self, json):
@@ -92,6 +155,40 @@ class Views(ParseFile, Analyse):
             else:
                 self.browser_families[browser] += 1
 
+
+    def count_read_data(self, json):
+        """Update reading data for each uuid
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        reading_time = json.get('event_readtime')
+        uuid = json.get('visitor_uuid')
+        if reading_time is not None and uuid is not None:
+            if self.reading_data.get(uuid, None) is None:
+                self.reading_data[uuid] = ReadingData(uuid, read_time=reading_time)
+            else:
+                self.reading_data[uuid].new_read(reading_time)
+        elif reading_time is None and uuid is not None:
+            if self.reading_data.get(uuid, None):
+                self.reading_data[uuid] = ReadingData(uuid, read_time=0, reads=0)
+
+
+    def top_reads(self, top_n=10, to_print=True):
+        """Find the top readers
+
+        Args:
+            top_n (int, optional): How many readers to find. Defaults to 10.
+            to_print (bool, optional): Print the result? Defaults to True.
+
+        Returns:
+            list(ReadingData): A list of top readers
+        """
+        self.sorted(sort_countries=False, sort_continents=False, sort_browsers=False)
+        top_readers = dict(list(self.reading_data.items())[:top_n])
+        if to_print:
+            [print(reader) for reader in top_readers]
+        return top_readers
 
     def country_name(self, code):
         """Get the country name from its alpha2 code
@@ -171,3 +268,4 @@ class Views(ParseFile, Analyse):
 
         self.histo_config = (data, titles, x_labels, y_labels)
         return (data, titles, x_labels, y_labels)
+

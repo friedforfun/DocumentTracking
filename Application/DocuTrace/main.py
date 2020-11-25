@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, argparse
-from DocuTrace.utils.logging import logger
+from DocuTrace.Utils.Logging import logger
 
 def main():
     next_step()
