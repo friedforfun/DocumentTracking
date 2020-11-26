@@ -1,10 +1,11 @@
 from functools import total_ordering
-import pycountry
-import pycountry_convert
 from user_agents import parse as ua_parse
 from .AbstractClasses import Analyse
 from .FileRead import ParseFile
 from .Plots import Plots
+from ..Utils.Logging import logger
+
+from .ComputeData import continent_name as cn
 
 @total_ordering
 class ReadingData:
@@ -56,34 +57,120 @@ class ReadingData:
 
 class DataCollector(ParseFile, Analyse):
 
-    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, count_reads=True):
+    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, count_reads=True, collect_doc_data=True):
         super().__init__(path)
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
         self.reading_data = {}
+        self.document_readers = {}
+        self.visitor_documents = {}
         self.figsize = fig_dimensions
         self.counted = False
         self.histo_config = None
 
-        self.count_fns = []
+        self.data_fns = []
         if count_browser:
-            self.count_fns.append(self.count_browsers)
+            self.data_fns.append(self.count_browsers)
         if count_country:
-            self.count_fns.append(self.count_countries)
+            self.data_fns.append(self.count_countries)
         if count_continent:
-            self.count_fns.append(self.count_continents)
+            self.data_fns.append(self.count_continents)
         if count_reads:
-            self.count_fns.append(self.count_read_data)
+            self.data_fns.append(self.collect_read_data)
+        if collect_doc_data:
+            self.data_fns.append(self.collect_document_readers)
 
 
-    def count(self):
+    def gather_data(self):
         """Compute the counts of the required data
         """
-        self.parse_file(self.count_fns)
+        self.parse_file(self.data_fns)
         self.counted = True
 
 
+    def count_countries(self, json):
+        """Increment the dictionary counter for the country in json
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        location = json.get('visitor_country', None)
+        if location is not None:
+            if self.countries.get(location, None) is None:
+                self.countries[location] = 1
+            else:
+                self.countries[location] += 1
+        
+
+    def count_continents(self, json):
+        """Increment the dictionary counter for the continent derived from the country in json
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        location = json.get('visitor_country', None)
+        if location is not None:
+            continent_name = cn(location)
+            if self.continents.get(continent_name, None) is None:
+                self.continents[continent_name] = 1
+            else:
+                self.continents[continent_name] += 1
+        
+
+    def count_browsers(self, json):
+        """Update the browser family count field in self
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        ua_string = json.get('visitor_useragent', None)
+        if ua_string is not None:
+            user_agent = ua_parse(ua_string)
+            browser = user_agent.browser.family
+            if self.browser_families.get(browser, None) is None:
+                self.browser_families[browser] = 1
+            else:
+                self.browser_families[browser] += 1
+
+
+    def collect_read_data(self, json):
+        """Update reading data for each uuid
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        reading_time = json.get('event_readtime')
+        uuid = json.get('visitor_uuid')
+        if reading_time is not None and uuid is not None:
+            if self.reading_data.get(uuid, None) is None:
+                self.reading_data[uuid] = ReadingData(uuid, read_time=reading_time)
+            else:
+                self.reading_data[uuid].new_read(reading_time)
+
+
+    def collect_document_readers(self, json):
+        """Collect document id and reader id information
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        document = json.get('env_doc_id')
+        uuid = json.get('visitor_uuid')
+        if document is not None and uuid is not None:
+            if self.document_readers.get(document, None) is None:
+                self.document_readers[document] = [uuid]
+            else:
+                self.document_readers[document].append(uuid)
+            if self.visitor_documents.get(uuid, None) is None:
+                self.visitor_documents[uuid] = [document]
+            else:
+                self.visitor_documents[uuid].append(document)
+
+
+
+
+#! --------------------- MOVE TO NEW CLASS -------------------------
     def sorted(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reading_data=True):
         """Sort each dict by its values
 
@@ -111,69 +198,6 @@ class DataCollector(ParseFile, Analyse):
                 self.reading_data.items(), key=lambda item: item[1], reverse=reverse)}
 
 
-    def count_countries(self, json):
-        """Increment the dictionary counter for the country in json
-
-        Args:
-            json (dict): dict returned by json.load
-        """
-        location = json.get('visitor_country', None)
-        if location is not None:
-            if self.countries.get(location, None) is None:
-                self.countries[location] = 1
-            else:
-                self.countries[location] += 1
-        
-
-    def count_continents(self, json):
-        """Increment the dictionary counter for the continent derived from the country in json
-
-        Args:
-            json (dict): dict returned by json.load
-        """
-        location = json.get('visitor_country', None)
-        if location is not None:
-            continent_name = self.continent_name(location)
-            if self.continents.get(continent_name, None) is None:
-                self.continents[continent_name] = 1
-            else:
-                self.continents[continent_name] += 1
-        
-
-    def count_browsers(self, json):
-        """Update the browser family count field in self
-
-        Args:
-            json (dict): dict returned by json.load
-        """
-        ua_string = json.get('visitor_useragent', None)
-        if ua_string is not None:
-            user_agent = ua_parse(ua_string)
-            browser = user_agent.browser.family
-            if self.browser_families.get(browser, None) is None:
-                self.browser_families[browser] = 1
-            else:
-                self.browser_families[browser] += 1
-
-
-    def count_read_data(self, json):
-        """Update reading data for each uuid
-
-        Args:
-            json (dict): dict returned by json.load
-        """
-        reading_time = json.get('event_readtime')
-        uuid = json.get('visitor_uuid')
-        if reading_time is not None and uuid is not None:
-            if self.reading_data.get(uuid, None) is None:
-                self.reading_data[uuid] = ReadingData(uuid, read_time=reading_time)
-            else:
-                self.reading_data[uuid].new_read(reading_time)
-        elif reading_time is None and uuid is not None:
-            if self.reading_data.get(uuid, None):
-                self.reading_data[uuid] = ReadingData(uuid, read_time=0, reads=0)
-
-
     def top_reads(self, top_n=10, to_print=True):
         """Find the top readers
 
@@ -189,38 +213,6 @@ class DataCollector(ParseFile, Analyse):
         if to_print:
             [print(reader) for reader in top_readers]
         return top_readers
-
-    def country_name(self, code):
-        """Get the country name from its alpha2 code
-
-        Args:
-            code (str): Country code
-
-        Returns:
-            str: Country name
-        """
-        country = pycountry.countries.get(alpha_2=code)
-        if country is None:
-            return 'Unknown'
-        else:
-            return country.name
-
-
-    def continent_name(self, alpha2_country):
-        """Get the contenent name from the country
-
-        Args:
-            alpha2_country (str): Country code
-
-        Returns:
-            str: Continent name
-        """          
-        try:
-            c = pycountry_convert.country_alpha2_to_continent_code(alpha2_country)
-            cont = pycountry_convert.convert_continent_code_to_continent_name(c)
-        except KeyError:
-            return 'Unknown'
-        return cont
 
 
     def histogram(self):
