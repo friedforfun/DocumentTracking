@@ -1,5 +1,6 @@
 import json
 from DocuTrace.Utils.Logging import logger
+import threading
 
 def stream_read_json(fname):
     """Lazy read json generator
@@ -44,15 +45,33 @@ class ParseFile:
         """
         self.file_iter = stream_read_json(path)
 
-    def parse_file(self, fn_list):
+    def parse_file(self, fn_list, threaded=True):
         """Apply a list of functions to the file_iter
 
         Args:
-            fn_list (list(dict->None)): A list of functions that all take a dict as a parameter, these functions not return anything
+            fn_list (list(dict->None)): A list of functions that all take a dict as a parameter
         """
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
-        logger.info('Begin reading file: {}'.format(self.path))
+        logger.debug('Begin reading file: {}'.format(self.path))
+        # Possible threading opportunity here
+        if threaded:
+            threads = [JsonParseThread(i, f) for i, f in enumerate(fn_list)]
         for json in self.file_iter:
-            [fn(json) for fn in fn_list]
+            if threaded:
+                [t.start() for t in threads]
+                [t.join() for t in threads]
+            else:
+                [fn(json) for fn in fn_list]
         logger.info('End reading file: {}'.format(self.path))
+
+
+class JsonParseThread(threading.Thread):
+    def __init__(self, name, fn):
+        threading.Thread.__init__(self)
+        self.name = name
+        self.fn = fn
+
+    def run(self, json):
+        logger.debug('Thread: {} - running'.format(self.name))
+        self.fn(json)
