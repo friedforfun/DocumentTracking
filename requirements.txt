@@ -15,8 +15,9 @@ cycler==0.10.0
 decorator==4.4.2
 defusedxml==0.6.0
 docutils==0.16
--e git+https://github.com/friedforfun/DocumentTracking.git@9c98f592ddefd5bb97c912522c66b446caf116ae#egg=DocuTrace&subdirectory=Application
+-e git+https://github.com/friedforfun/DocumentTracking.git@06daf01d2cd7a296eaffa9808d846f8009f1e453#egg=DocuTrace&subdirectory=Application
 entrypoints==0.3
+graphviz==0.15
 idna==2.10
 imagesize==1.2.0
 iniconfig==1.1.1

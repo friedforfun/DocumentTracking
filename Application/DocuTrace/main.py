@@ -27,10 +27,11 @@ def run(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     args = parser.add_argument_group('Params')
-    args.add_argument('-u', '--user_uuid', nargs=1, help='Specifies the user uuid', required=True)
-    args.add_argument('-d', '--doc_uuid', nargs=1, help='Specifies the document uuid', required=True)
+    args.add_argument('-u', '--user_uuid', nargs=1, help='Specifies the user uuid', required=False)
+    args.add_argument('-d', '--doc_uuid', nargs=1, help='Specifies the document uuid', required=False)
+    # Task id is mandatory for command line usage
     args.add_argument('-t', '--task_id', nargs=1, help='Specifies the task id', required=True)
-    args.add_argument('-f', '--filepath', nargs=1, help='Specifies the file name', required=True)
+    args.add_argument('-f', '--filepath', nargs=1, help='Specifies the file name', required=False)
     args.add_argument('-v', '--verbose', type=str2bool, required=False, default=False, nargs='?', const=True, help='Set a verbose output')
     return parser.parse_args()
 

@@ -17,6 +17,7 @@ The **DocuTrace** module has the following dependencies:
 - user-agents==2.2.0
 - pycountry==20.7.3
 - pycountry-convert==0.7.2
+- graphviz==0.15
 
 **Test** requirements:
 - pytest==6.1.2
@@ -35,15 +36,23 @@ Installation
 ============
 1. Create a Python 3.8 environment
 2. Install the dependencies from `requirements.txt`:
-    `$ pip install -r requirements.txt`
+    ``$ pip install -r requirements.txt``
+3. Install the DocuTrace module:
+    ``$ pip install -e Application/DocuTrace``
 
 
 Command line usage
 ==================
-`<Path to repository>/Application$ python DocuTrace/main.py -h`
+Ensure your current shell is in the correct environment.
+
+This application can either be run directly on the python entry point:
+``<Path to repository>/Application$ python DocuTrace/main.py -h``
+
+Alternatively a shell script has been provided within the Application directory (needs executable permissions):
+``$ ./docutrace -h``
 
 
-usage: main.py [-h] -u USER_UUID -d DOC_UUID -t TASK_ID -f FILEPATH [-v [VERBOSE]]
+usage: ``main.py [-h] [-u USER_UUID] [-d DOC_UUID] -t TASK_ID [-f FILEPATH] [-v [VERBOSE]]``
 
 optional arguments:
   -h, --help            show this help message and exit
