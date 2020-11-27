@@ -1,6 +1,7 @@
 import json
 from DocuTrace.Utils.Logging import logger
-import threading
+import threading, queue
+#from multiprocessing import Queue
 
 def stream_read_json(fname):
     """Lazy read json generator
@@ -45,33 +46,68 @@ class ParseFile:
         """
         self.file_iter = stream_read_json(path)
 
-    def parse_file(self, fn_list, threaded=True):
+
+    def parse_file(self, fn_list, threaded=False, num_threads=1):
         """Apply a list of functions to the file_iter
 
         Args:
             fn_list (list(dict->None)): A list of functions that all take a dict as a parameter
+            threaded (bool, optional): Experimental, currently much slower than without (cost of instantiating threads too great). Defaults to False.
+
+        Raises:
+            AttributeError: When a path has not been specified for the file iterator
         """
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
         logger.debug('Begin reading file: {}'.format(self.path))
-        # Possible threading opportunity here
-        if threaded:
-            threads = [JsonParseThread(i, f) for i, f in enumerate(fn_list)]
-        for json in self.file_iter:
-            if threaded:
-                [t.start() for t in threads]
-                [t.join() for t in threads]
-            else:
-                [fn(json) for fn in fn_list]
-        logger.info('End reading file: {}'.format(self.path))
 
+        if threaded:
+            logger.warning('Threading has been enabled in FileRead.parse_file, this is experimental and may result in worse performance.')
+            with JsonThreadsContextManager(fn_list, num_threads) as jtcm:
+                for json in self.file_iter:
+                    jtcm.enqueue(json)
+                
+        else:
+            for json in self.file_iter:
+                [fn(json) for fn in fn_list]
+        
+        logger.debug('End reading file: {}'.format(self.path))
+
+class JsonThreadsContextManager():
+    def __init__(self, fn_list, num_threads):
+        self.queue = queue.Queue()
+        self.threads = self.assign_threads([JsonParseThread(i, fn_list) for i in range(num_threads)])
+
+    def assign_threads(self, threads):
+        self.threads = [thread.set_queue(self.queue) for thread in threads]
+        return self.threads
+
+    def enqueue(self, json):
+        self.queue.put(json)
+
+    def __enter__(self):
+        [t.start() for t in self.threads]
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        if exception_value is not None:
+            logger.debug('Exception when leaving context manager: {}'.format(exception_type))
+        self.queue.join()
 
 class JsonParseThread(threading.Thread):
-    def __init__(self, name, fn):
-        threading.Thread.__init__(self)
+    def __init__(self, name, fn_list):
+        threading.Thread.__init__(self, daemon=True)
         self.name = name
-        self.fn = fn
+        self.fn_list = fn_list
 
-    def run(self, json):
+    def set_queue(self, queue):
+        self.queue = queue
+        return self
+
+    def run(self):
         logger.debug('Thread: {} - running'.format(self.name))
-        self.fn(json)
+        while True:
+            json_line = self.queue.get()
+            [fn(json_line) for fn in self.fn_list]
+            self.queue.task_done()
+        

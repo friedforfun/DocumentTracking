@@ -62,9 +62,13 @@ def continent_name(alpha2_country):
     return cont
     
 class ComputeData:
-    def __init__(self, document_readers, visitor_documents):
-        self.document_readers = document_readers
-        self.visitor_documents = visitor_documents
+    def __init__(self, data_collector):
+        self.countries = data_collector.countries
+        self.continents = data_collector.continents
+        self.browser_families = data_collector.browser_families
+        self.reader_profiles = data_collector.reader_profiles
+        self.document_readers = data_collector.document_readers
+        self.visitor_documents = data_collector.visitor_documents
 
     def also_likes_top_10(self, document, visitor=None):
         """Get the top 10 also likes for the given parameters
@@ -123,4 +127,46 @@ class ComputeData:
         return dict(zip(keys, counts))
 
 
+    def sort(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reader_profiles=True):
+        """Sort each dict by its values
+
+        Args:
+            reverse (bool, optional): Reverse the sorting order, (reverse=True is descending)
+            sort_countries (bool, optional): Sort countries in self? Defaults to True.
+            sort_continents (bool, optional): Sort continents in self? Defaults to True.
+            sort_browsers (bool, optional): Sort browser data in self? Defaults to True.
+            sort_reader_profiles (bool, optional): Sort reading data in self? Defaults to True.
+        """
+        if sort_countries:
+            self.countries = {k: v for k, v in sorted(
+                self.countries.items(), key=lambda item: item[1], reverse=reverse)}
+
+        if sort_continents:
+            self.continents = {k: v for k, v in sorted(
+                self.continents.items(), key=lambda item: item[1], reverse=reverse)}
+
+        if sort_browsers:
+            self.browser_families = {k: v for k, v in sorted(
+                self.browser_families.items(), key=lambda item: item[1], reverse=reverse)}
+
+        if sort_reader_profiles:
+            self.reader_profiles = {k: v for k, v in sorted(
+                self.reader_profiles.items(), key=lambda item: item[1], reverse=reverse)}
+
+
+    def top_reads(self, top_n=10, to_print=True):
+        """Find the top readers
+
+        Args:
+            top_n (int, optional): How many readers to find. Defaults to 10.
+            to_print (bool, optional): Print the result? Defaults to True.
+
+        Returns:
+            list(ReadingData): A list of top readers
+        """
+        self.sort(sort_countries=False, sort_continents=False, sort_browsers=False)
+        top_readers = dict(list(self.reader_profiles.items())[:top_n])
+        if to_print:
+            [print(reader) for reader in top_readers]
+        return top_readers
 

@@ -55,36 +55,10 @@ def test_count_browsers():
 
 def test_count_user_reads():
     views = DataCollector()
-    assert '745409913574d4c6' not in views.reading_data.keys()
-    views.collect_read_data(json_dict)
-    assert views.reading_data['745409913574d4c6'].read_time == 797
+    assert '745409913574d4c6' not in views.reader_profiles.keys()
+    views.collect_reading_data(json_dict)
+    assert views.reader_profiles['745409913574d4c6'].read_time == 797
 
-
-def test_top_reads():
-    views = DataCollector()
-    views.reading_data = {
-        '64bf70296da2f9fd': ReadingData('64bf70296da2f9fd', 500),
-        '745409913574d4c6': ReadingData('745409913574d4c6', 1000),
-        '9a83c97f415601a6': ReadingData('9a83c97f415601a6', 750)
-    }   
-    assert views.top_reads(2, False) == {
-        '745409913574d4c6': ReadingData('745409913574d4c6', 1000),
-        '9a83c97f415601a6': ReadingData('9a83c97f415601a6', 750)
-        }
-    
-
-def test_sorted():
-    views = DataCollector()
-    views.countries = {
-        'MX': 10,
-        'GB': 8,
-        'CA': 15
-    }
-    assert list(views.countries.values()) == [10, 8, 15]
-    views.sorted()
-    assert list(views.countries.values()) == [15, 10, 8]
-    views.sorted(reverse=False)
-    assert list(views.countries.values()) == [8, 10, 15]
 
 def test_collect_document_readers():
     views = DataCollector()

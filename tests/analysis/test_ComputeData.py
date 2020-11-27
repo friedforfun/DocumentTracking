@@ -1,15 +1,41 @@
 from DocuTrace.Analysis.ComputeData import ComputeData, sort_dict_by_value, top_n_sorted, country_name, continent_name
+from DocuTrace.Analysis.DataCollector import ReadingData, DataCollector
 
-document_readers = {
+dc = DataCollector()
+dc.countries = {
+    'MX': 1
+}
+
+dc.continents = {
+    'North America': 1
+}
+
+dc.browser_families = {
+    'Firefox': 1
+}
+
+dc.reader_profiles = {
+    '64bf70296da2f9fd': ReadingData('64bf70296da2f9fd', 500),
+    '745409913574d4c6': ReadingData('745409913574d4c6', 1000),
+    '9a83c97f415601a6': ReadingData('9a83c97f415601a6', 750)
+}
+
+dc.document_readers = {
     '123': ['a'],
     '456': ['a', 'b'],
     '789': ['b', 'c']
 }
 
-visitor_documents = {
+dc.visitor_documents = {
     'a': ['123', '456'],
     'b': ['456', '789'],
     'c': '789'
+}
+
+countries = {
+    'MX': 10,
+    'GB': 8,
+    'CA': 15
 }
 
 dict_of_counts = {
@@ -47,9 +73,9 @@ def test_continent_name():
 
 
 def test_find_also_likes_no_visitor():
-    compute = ComputeData(document_readers, visitor_documents)
+    compute = ComputeData(dc)
     assert compute.find_also_likes('456') == {'123': 1, '789': 1}
-    assert document_readers == {
+    assert dc.document_readers == {
         '123': ['a'],
         '456': ['a', 'b'],
         '789': ['b', 'c']
@@ -57,23 +83,41 @@ def test_find_also_likes_no_visitor():
 
 
 def test_find_also_likes_visitor():
-    compute = ComputeData(document_readers, visitor_documents)
+    compute = ComputeData(dc)
     assert compute.find_also_likes('456', 'a') == {'789': 1}
     # document_readers was getting mutated
-    assert document_readers == {
+    assert dc.document_readers == {
         '123': ['a'],
         '456': ['a', 'b'],
         '789': ['b', 'c']
     }
 
 def test_also_likes_no_visitor():
-    compute = ComputeData(document_readers, visitor_documents)
+    compute = ComputeData(dc)
     assert compute.also_likes('456', visitor=None) == ['123', '789']
 
 def test_also_likes_visitor():
-    compute = ComputeData(document_readers, visitor_documents)
+    compute = ComputeData(dc)
     assert compute.also_likes('456', 'a') == ['789']
 
 
 def test_also_likes_top_10():
     pass
+
+
+def test_sort():
+    compute = ComputeData(dc)
+    compute.countries = countries
+    assert list(compute.countries.values()) == [10, 8, 15]
+    compute.sort(reverse=True)
+    assert list(compute.countries.values()) == [15, 10, 8]
+    compute.sort(reverse=False)
+    assert list(compute.countries.values()) == [8, 10, 15]
+
+
+def test_top_reads():
+    compute = ComputeData(dc)
+    assert compute.top_reads(2, False) == {
+        '745409913574d4c6': ReadingData('745409913574d4c6', 1000),
+        '9a83c97f415601a6': ReadingData('9a83c97f415601a6', 750)
+    }

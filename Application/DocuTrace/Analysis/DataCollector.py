@@ -1,11 +1,14 @@
 from functools import total_ordering
 from user_agents import parse as ua_parse
+from threading import BoundedSemaphore
+
 from .AbstractClasses import Analyse
 from .FileRead import ParseFile
 from .Plots import Plots
 from ..Utils.Logging import logger
 
-from .ComputeData import continent_name as cn
+from .ComputeData import continent_name
+
 
 @total_ordering
 class ReadingData:
@@ -55,14 +58,16 @@ class ReadingData:
     def __str__(self):
         return "<uuid:%s, Read time:%s, Number of reads:%s>\n" % (self.uuid, self.read_time, self.reads)
 
+
+
 class DataCollector(ParseFile, Analyse):
 
-    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, count_reads=True, collect_doc_data=True):
+    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, build_reader_profiles=True, collect_doc_data=True):
         super().__init__(path)
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
-        self.reading_data = {}
+        self.reader_profiles = {}
         self.document_readers = {}
         self.visitor_documents = {}
         self.figsize = fig_dimensions
@@ -71,21 +76,26 @@ class DataCollector(ParseFile, Analyse):
 
         self.data_fns = []
         if count_browser:
+            self.browser_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_browsers)
         if count_country:
+            self.country_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_countries)
         if count_continent:
+            self.continent_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_continents)
-        if count_reads:
-            self.data_fns.append(self.collect_read_data)
+        if build_reader_profiles:
+            self.reader_profile_sema = BoundedSemaphore(value=1)
+            self.data_fns.append(self.collect_reading_data)
         if collect_doc_data:
+            self.docu_readers_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.collect_document_readers)
 
 
-    def gather_data(self):
+    def gather_data(self, threaded=False, num_threads=1):
         """Compute the counts of the required data
         """
-        self.parse_file(self.data_fns)
+        self.parse_file(self.data_fns, threaded=threaded, num_threads=num_threads)
         self.counted = True
 
 
@@ -95,12 +105,13 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        location = json.get('visitor_country', None)
-        if location is not None:
-            if self.countries.get(location, None) is None:
-                self.countries[location] = 1
-            else:
-                self.countries[location] += 1
+        with self.country_sema:
+            location = json.get('visitor_country', None)
+            if location is not None:
+                if self.countries.get(location, None) is None:
+                    self.countries[location] = 1
+                else:
+                    self.countries[location] += 1
         
 
     def count_continents(self, json):
@@ -109,13 +120,14 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        location = json.get('visitor_country', None)
-        if location is not None:
-            continent_name = cn(location)
-            if self.continents.get(continent_name, None) is None:
-                self.continents[continent_name] = 1
-            else:
-                self.continents[continent_name] += 1
+        with self.continent_sema:
+            location = json.get('visitor_country', None)
+            if location is not None:
+                continent_n = continent_name(location)
+                if self.continents.get(continent_n, None) is None:
+                    self.continents[continent_n] = 1
+                else:
+                    self.continents[continent_n] += 1
         
 
     def count_browsers(self, json):
@@ -124,29 +136,31 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        ua_string = json.get('visitor_useragent', None)
-        if ua_string is not None:
-            user_agent = ua_parse(ua_string)
-            browser = user_agent.browser.family
-            if self.browser_families.get(browser, None) is None:
-                self.browser_families[browser] = 1
-            else:
-                self.browser_families[browser] += 1
+        with self.browser_sema:
+            ua_string = json.get('visitor_useragent', None)
+            if ua_string is not None:
+                user_agent = ua_parse(ua_string)
+                browser = user_agent.browser.family
+                if self.browser_families.get(browser, None) is None:
+                    self.browser_families[browser] = 1
+                else:
+                    self.browser_families[browser] += 1
 
 
-    def collect_read_data(self, json):
+    def collect_reading_data(self, json):
         """Update reading data for each uuid
 
         Args:
             json (dict): dict returned by json.load
         """
-        reading_time = json.get('event_readtime')
-        uuid = json.get('visitor_uuid')
-        if reading_time is not None and uuid is not None:
-            if self.reading_data.get(uuid, None) is None:
-                self.reading_data[uuid] = ReadingData(uuid, read_time=reading_time)
-            else:
-                self.reading_data[uuid].new_read(reading_time)
+        with self.reader_profile_sema:
+            reading_time = json.get('event_readtime')
+            uuid = json.get('visitor_uuid')
+            if reading_time is not None and uuid is not None:
+                if self.reader_profiles.get(uuid, None) is None:
+                    self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
+                else:
+                    self.reader_profiles[uuid].new_read(reading_time)
 
 
     def collect_document_readers(self, json):
@@ -155,64 +169,23 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        document = json.get('env_doc_id')
-        uuid = json.get('visitor_uuid')
-        if document is not None and uuid is not None:
-            if self.document_readers.get(document, None) is None:
-                self.document_readers[document] = [uuid]
-            else:
-                self.document_readers[document].append(uuid)
-            if self.visitor_documents.get(uuid, None) is None:
-                self.visitor_documents[uuid] = [document]
-            else:
-                self.visitor_documents[uuid].append(document)
+        with self.docu_readers_sema:
+            document = json.get('env_doc_id')
+            uuid = json.get('visitor_uuid')
+            if document is not None and uuid is not None:
+                if self.document_readers.get(document, None) is None:
+                    self.document_readers[document] = [uuid]
+                else:
+                    self.document_readers[document].append(uuid)
+                if self.visitor_documents.get(uuid, None) is None:
+                    self.visitor_documents[uuid] = [document]
+                else:
+                    self.visitor_documents[uuid].append(document)
 
 
 
 
 #! --------------------- MOVE TO NEW CLASS -------------------------
-    def sorted(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reading_data=True):
-        """Sort each dict by its values
-
-        Args:
-            reverse (bool, optional): Reverse the sorting order, (reverse=True is descending)
-            sort_countries (bool, optional): Sort countries in self? Defaults to True.
-            sort_continents (bool, optional): Sort continents in self? Defaults to True.
-            sort_browsers (bool, optional): Sort browser data in self? Defaults to True.
-            sort_reading_data (bool, optional): Sort reading data in self? Defaults to True.
-        """
-        if sort_countries:
-            self.countries = {k: v for k, v in sorted(
-                self.countries.items(), key=lambda item: item[1], reverse=reverse)}
-
-        if sort_continents:
-            self.continents = {k: v for k, v in sorted(
-                self.continents.items(), key=lambda item: item[1], reverse=reverse)}
-
-        if sort_browsers:
-            self.browser_families = {k: v for k, v in sorted(
-                self.browser_families.items(), key=lambda item: item[1], reverse=reverse)}
-
-        if sort_reading_data:
-            self.reading_data = {k: v for k, v in sorted(
-                self.reading_data.items(), key=lambda item: item[1], reverse=reverse)}
-
-
-    def top_reads(self, top_n=10, to_print=True):
-        """Find the top readers
-
-        Args:
-            top_n (int, optional): How many readers to find. Defaults to 10.
-            to_print (bool, optional): Print the result? Defaults to True.
-
-        Returns:
-            list(ReadingData): A list of top readers
-        """
-        self.sorted(sort_countries=False, sort_continents=False, sort_browsers=False)
-        top_readers = dict(list(self.reading_data.items())[:top_n])
-        if to_print:
-            [print(reader) for reader in top_readers]
-        return top_readers
 
 
     def histogram(self):
