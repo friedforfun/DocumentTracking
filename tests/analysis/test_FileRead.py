@@ -1,4 +1,5 @@
 from DocuTrace.Analysis.FileRead import stream_read_json, ParseFile
+from DocuTrace.Analysis.DataCollector import DataCollector
 import pytest
 from unittest.mock import patch, mock_open
 
@@ -68,7 +69,8 @@ def test_apply_fn_ParseFile():
             assert json.get(key_list[0]) == 'MX'
         def test_fn3(json):
             assert json.get(key_list[0]) == 'MX'
-        parser.parse_file([test_fn1, test_fn2, test_fn3], threaded=False)
+        parser.fn_list = [test_fn1, test_fn2, test_fn3]
+        parser.parse_file(DataCollector(), threaded=False)
 
 
 def test_apply_fn_threaded_ParseFile():
@@ -84,7 +86,8 @@ def test_apply_fn_threaded_ParseFile():
 
         def test_fn3(json):
             assert json.get(key_list[0]) == 'MX'
-        parser.parse_file([test_fn1, test_fn2, test_fn3], threaded=True)
+        parser.fn_list = [test_fn1, test_fn2, test_fn3]
+        parser.parse_file(DataCollector(), threaded=True)
 
 
 def test_raise_attributeerr_ParseFile():
@@ -92,4 +95,4 @@ def test_raise_attributeerr_ParseFile():
         def test_fn(json):
             assert json.get(key_list[0]) == 'MX'
         with pytest.raises(AttributeError):
-            parser.parse_file([test_fn])
+            parser.parse_file(DataCollector(), [test_fn])

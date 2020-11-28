@@ -74,7 +74,7 @@ def test_continent_name():
 
 def test_find_also_likes_no_visitor():
     compute = ComputeData(dc)
-    assert compute.find_also_likes('456') == {'123': 1, '789': 1}
+    assert compute.find_also_likes_counts('456') == {'123': 1, '789': 1}
     assert dc.document_readers == {
         '123': ['a'],
         '456': ['a', 'b'],
@@ -82,9 +82,9 @@ def test_find_also_likes_no_visitor():
     }
 
 
-def test_find_also_likes_visitor():
+def test_find_also_likes_counts_visitor():
     compute = ComputeData(dc)
-    assert compute.find_also_likes('456', 'a') == {'789': 1}
+    assert compute.find_also_likes_counts('456', 'a') == {'789': 1}
     # document_readers was getting mutated
     assert dc.document_readers == {
         '123': ['a'],
