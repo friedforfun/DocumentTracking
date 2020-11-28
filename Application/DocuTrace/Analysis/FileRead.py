@@ -1,7 +1,18 @@
+from copy import deepcopy
 import json
-from DocuTrace.Utils.Logging import logger
-import threading, queue
-#from multiprocessing import Queue
+import threading
+import queue
+from alive_progress import alive_bar
+from DocuTrace.Utils.Logging import logger, debug, logging
+import time
+
+def stream_file_chunks(file_name, chunk_size=100000):
+    with open(file_name) as f:
+        while True:
+            data = f.readlines(chunk_size)
+            if not data:
+                break
+            yield data
 
 def stream_read_json(fname):
     """Lazy read json generator
@@ -29,25 +40,25 @@ def stream_read_json(fname):
 
 
 class ParseFile:
-    def __init__(self, path=None):
+    def __init__(self, path=None,  chunk_size=100000):
         if path is not None:
-            self.file_iter = stream_read_json(path)
+            self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
         else:
             self.file_iter = None
         self.path = path
 
         self.parsed_file = False
 
-    def set_read_path(self, path):
+    def set_read_path(self, path, chunk_size=100000):
         """Specify the path for LocationViews to read from
 
         Args:
             path (str): Path to the datafile
         """
-        self.file_iter = stream_read_json(path)
+        self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
 
-
-    def parse_file(self, fn_list, threaded=False, num_threads=1):
+    @debug
+    def parse_file(self, data_collector, threaded=False, num_threads=4):
         """Apply a list of functions to the file_iter
 
         Args:
@@ -60,30 +71,61 @@ class ParseFile:
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
         logger.debug('Begin reading file: {}'.format(self.path))
-
+        #with alive_bar() as bar:
         if threaded:
-            logger.warning('Threading has been enabled in FileRead.parse_file, this is experimental and may result in worse performance.')
-            with JsonThreadsContextManager(fn_list, num_threads) as jtcm:
-                for json in self.file_iter:
-                    jtcm.enqueue(json)
-                
+            logger.warning('Threading has been enabled in FileRead.parse_file, this is experimental and may result in worse performance with small files.')
+            with JsonThreadsContextManager(data_collector, num_threads) as jtcm:
+                for chunk in self.file_iter:
+                    jtcm.enqueue(chunk)
+                    #bar()
+                logger.debug('Finished queueing chunks')
         else:
-            for json in self.file_iter:
-                [fn(json) for fn in fn_list]
-        
+
+            for chunk in self.file_iter:
+                for line in chunk:
+                    try:
+                        json_line = line.rstrip()
+                        parsed_json = json.loads(json_line)
+                        [fn(parsed_json) for fn in self.fn_list]
+                    except json.JSONDecodeError as e:
+                        logger.exception(
+                            'JSON decode error encountered in thread: main. Exception: {}'.format(e))
+                        #bar()
+
         logger.debug('End reading file: {}'.format(self.path))
 
 class JsonThreadsContextManager():
-    def __init__(self, fn_list, num_threads):
+    """Context manager to assist processing large files with threads
+
+        Args:
+            data_collector (DataCollector): An instance of the DataCollector class
+            num_threads (int): The number of threads to instantiate
+        """
+    def __init__(self, data_collector, num_threads):
         self.queue = queue.Queue()
-        self.threads = self.assign_threads([JsonParseThread(i, fn_list) for i in range(num_threads)])
+        self.data_collector = data_collector
+        self.collectors = [deepcopy(data_collector) for _ in range(num_threads)]
+        self.threads = self.assign_threads([JsonParseThread(i, self.collectors[i]) for i in range(num_threads)])
 
     def assign_threads(self, threads):
+        """Assign each thread a reference to the queue
+
+        Args:
+            threads (JsonParseThread): A thread to parse the json file
+
+        Returns:
+            list(JsonParseThread): A list of threads
+        """
         self.threads = [thread.set_queue(self.queue) for thread in threads]
         return self.threads
 
-    def enqueue(self, json):
-        self.queue.put(json)
+    def enqueue(self, chunk):
+        """Add a chunk to the queue to be processed by consumer threads
+
+        Args:
+            chunk (list(str)): A chunk produced by the stream_file_chunks function
+        """
+        self.queue.put(chunk)
 
     def __enter__(self):
         [t.start() for t in self.threads]
@@ -93,21 +135,43 @@ class JsonThreadsContextManager():
         if exception_value is not None:
             logger.debug('Exception when leaving context manager: {}'.format(exception_type))
         self.queue.join()
+        for collector in self.collectors:
+            self.data_collector.merge(collector)
+
 
 class JsonParseThread(threading.Thread):
-    def __init__(self, name, fn_list):
-        threading.Thread.__init__(self, daemon=True)
-        self.name = name
-        self.fn_list = fn_list
+    def __init__(self, name, data_collector):
+        threading.Thread.__init__(self)
+        self.t_name = name
+        self.data_collector = data_collector
+        self.fn_list = data_collector.data_fns
 
     def set_queue(self, queue):
+        """Assign a reference to the queue to consume from
+
+        Args:
+            queue (queue.Queue): A FIFO queue working as a provider for each thread
+
+        Returns:
+            JsonParseThread: Self with a queue assigned
+        """
         self.queue = queue
         return self
 
     def run(self):
-        logger.debug('Thread: {} - running'.format(self.name))
+        logger.debug('Thread: {} - running'.format(self.t_name))
         while True:
-            json_line = self.queue.get()
-            [fn(json_line) for fn in self.fn_list]
+            chunk = self.queue.get()
+            start_time = time.time()
+            #print('CHUNK SIZE: {}'.format(len(chunk)))
+            for line in chunk:
+                try:
+                    json_line = line.rstrip()
+                    parsed_json = json.loads(json_line)
+                    [fn(parsed_json) for fn in self.fn_list]
+                except json.JSONDecodeError as e:
+                    logger.exception('JSON decode error encountered in thread: {}. Exception: {}'.format(self.t_name, e))
             self.queue.task_done()
+            duration = time.time() - start_time
+            logger.debug('Thread <{}>... one chunk processed. Duration: {} | Chunk size: {}'.format(self.t_name, duration, len(chunk)))
         

@@ -84,7 +84,7 @@ class ComputeData:
 
 
     def also_likes(self, document, visitor=None, sort_fn=sort_dict_by_value):
-        """For a given document identify which other documents have been read by this document, when visitor is given exclude them from the resulting list.
+        """For a given document identify which other documents have been read by a reader of this document, when visitor is given exclude them from the resulting list.
 
         Args:
             document (str): Document id
@@ -94,14 +94,11 @@ class ComputeData:
         Returns:
             List(str): A list of document ids, sorted by the provided function
         """
-        print(self.document_readers)
-        print(self.visitor_documents)
-        also_likes_dict = self.find_also_likes(document, visitor=visitor)
-        print(also_likes_dict)
+        also_likes_dict = self.find_also_likes_counts(document, visitor=visitor)
         return sort_fn(also_likes_dict)
 
 
-    def find_also_likes(self, document, visitor=None):
+    def find_also_likes_counts(self, document, visitor=None):
         """Computes also likes based on a document id, and (optionally) a visitor id
 
         Args:
@@ -111,21 +108,27 @@ class ComputeData:
         Returns:
             dict(str, int): A dict, where each key is a document id and each key is a count
         """
-        # key error raised if document not found
-        # deep copy to prevent mutating self.document_readers
-        readers = deepcopy(self.document_readers.get(document))
-
-        # Visitor should be excluded from result
-        if visitor in readers:
-            readers.remove(visitor)
-
-        relevant_docs = np.array([self.visitor_documents.get(uuid, ['']) for uuid in readers], dtype=object).flatten()
-        relevant_docs = relevant_docs[relevant_docs != '']
-        relevant_docs = relevant_docs[relevant_docs != document]
-
+        relevant_docs, _ = self.find_relevant_docs(document, visitor)
         keys, counts = np.unique(relevant_docs, return_counts=True)
         return dict(zip(keys, counts))
 
+    def find_relevant_docs(self, document, visitor=None):
+        # key error raised if document not found
+        # deep copy to prevent mutating self.document_readers
+        readers = np.array(deepcopy(self.document_readers.get(document)))
+
+        # Visitor should be excluded from result
+        if visitor in readers:
+            readers = readers[readers != visitor]
+
+        docs = []
+        for uuid in readers:
+            docs += [*self.visitor_documents.get(uuid, '')]
+
+        relevant_docs = np.array(docs)
+        relevant_docs = relevant_docs[relevant_docs != '']
+        relevant_docs = relevant_docs[relevant_docs != document]
+        return relevant_docs, readers
 
     def sort(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reader_profiles=True):
         """Sort each dict by its values

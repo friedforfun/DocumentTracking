@@ -4,11 +4,25 @@ from threading import BoundedSemaphore
 
 from .AbstractClasses import Analyse
 from .FileRead import ParseFile
-from .Plots import Plots
+from .Plots import Charts
 from ..Utils.Logging import logger
 
 from .ComputeData import continent_name
 
+
+def merge_dict(own, other):
+    """Merge other dict with self
+
+    Args:
+        own (dict): the dict being merged into
+        other (dict): the dict being read from
+    """
+    for element in other:
+        if own.get(element, None) is None:
+            own[element] = other[element]
+        else:
+            own[element] += other[element]
+    return own
 
 @total_ordering
 class ReadingData:
@@ -60,10 +74,10 @@ class ReadingData:
 
 
 
-class DataCollector(ParseFile, Analyse):
+class DataCollector(Analyse):
 
     def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, build_reader_profiles=True, collect_doc_data=True):
-        super().__init__(path)
+        self.path = path
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
@@ -76,26 +90,29 @@ class DataCollector(ParseFile, Analyse):
 
         self.data_fns = []
         if count_browser:
-            self.browser_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_browsers)
         if count_country:
-            self.country_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_countries)
         if count_continent:
-            self.continent_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.count_continents)
         if build_reader_profiles:
-            self.reader_profile_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.collect_reading_data)
         if collect_doc_data:
-            self.docu_readers_sema = BoundedSemaphore(value=1)
             self.data_fns.append(self.collect_document_readers)
 
+    def set_read_path(self, path):
+        """Specify the path for LocationViews to read from
 
-    def gather_data(self, threaded=False, num_threads=1):
+        Args:
+            path (str): Path to the datafile
+        """
+        self.path = path
+
+    def gather_data(self, threaded=False, num_threads=1, chunk_size=100000):
         """Compute the counts of the required data
         """
-        self.parse_file(self.data_fns, threaded=threaded, num_threads=num_threads)
+        ParseFile(self.path, chunk_size=chunk_size).parse_file(
+            self, threaded=threaded, num_threads=num_threads)
         self.counted = True
 
 
@@ -105,13 +122,12 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        with self.country_sema:
-            location = json.get('visitor_country', None)
-            if location is not None:
-                if self.countries.get(location, None) is None:
-                    self.countries[location] = 1
-                else:
-                    self.countries[location] += 1
+        location = json.get('visitor_country', None)
+        if location is not None:
+            if self.countries.get(location, None) is None:
+                self.countries[location] = 1
+            else:
+                self.countries[location] += 1
         
 
     def count_continents(self, json):
@@ -120,14 +136,13 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        with self.continent_sema:
-            location = json.get('visitor_country', None)
-            if location is not None:
-                continent_n = continent_name(location)
-                if self.continents.get(continent_n, None) is None:
-                    self.continents[continent_n] = 1
-                else:
-                    self.continents[continent_n] += 1
+        location = json.get('visitor_country', None)
+        if location is not None:
+            continent_n = continent_name(location)
+            if self.continents.get(continent_n, None) is None:
+                self.continents[continent_n] = 1
+            else:
+                self.continents[continent_n] += 1
         
 
     def count_browsers(self, json):
@@ -136,15 +151,14 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        with self.browser_sema:
-            ua_string = json.get('visitor_useragent', None)
-            if ua_string is not None:
-                user_agent = ua_parse(ua_string)
-                browser = user_agent.browser.family
-                if self.browser_families.get(browser, None) is None:
-                    self.browser_families[browser] = 1
-                else:
-                    self.browser_families[browser] += 1
+        ua_string = json.get('visitor_useragent', None)
+        if ua_string is not None:
+            user_agent = ua_parse(ua_string)
+            browser = user_agent.browser.family
+            if self.browser_families.get(browser, None) is None:
+                self.browser_families[browser] = 1
+            else:
+                self.browser_families[browser] += 1
 
 
     def collect_reading_data(self, json):
@@ -153,14 +167,13 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        with self.reader_profile_sema:
-            reading_time = json.get('event_readtime')
-            uuid = json.get('visitor_uuid')
-            if reading_time is not None and uuid is not None:
-                if self.reader_profiles.get(uuid, None) is None:
-                    self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
-                else:
-                    self.reader_profiles[uuid].new_read(reading_time)
+        reading_time = json.get('event_readtime')
+        uuid = json.get('visitor_uuid')
+        if reading_time is not None and uuid is not None:
+            if self.reader_profiles.get(uuid, None) is None:
+                self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
+            else:
+                self.reader_profiles[uuid].new_read(reading_time)
 
 
     def collect_document_readers(self, json):
@@ -169,20 +182,32 @@ class DataCollector(ParseFile, Analyse):
         Args:
             json (dict): dict returned by json.load
         """
-        with self.docu_readers_sema:
-            document = json.get('env_doc_id')
-            uuid = json.get('visitor_uuid')
-            if document is not None and uuid is not None:
-                if self.document_readers.get(document, None) is None:
-                    self.document_readers[document] = [uuid]
-                else:
-                    self.document_readers[document].append(uuid)
-                if self.visitor_documents.get(uuid, None) is None:
-                    self.visitor_documents[uuid] = [document]
-                else:
-                    self.visitor_documents[uuid].append(document)
+        document = json.get('env_doc_id')
+        uuid = json.get('visitor_uuid')
+        if document is not None and uuid is not None:
+            if self.document_readers.get(document, None) is None:
+                self.document_readers[document] = [uuid]
+            else:
+                self.document_readers[document].append(uuid)
+            if self.visitor_documents.get(uuid, None) is None:
+                self.visitor_documents[uuid] = [document]
+            else:
+                self.visitor_documents[uuid].append(document)
 
 
+    def merge(self, other):
+        """Merge the dictionaries of other with self
+
+        Args:
+            other (DataCollector): other must be a DataCollector instance
+        """
+        self.countries = merge_dict(self.countries, other.countries)
+        self.continents = merge_dict(self.continents, other.continents)
+        self.browser_families = merge_dict(self.browser_families, other.browser_families)
+        self.document_readers = merge_dict(self.document_readers, other.document_readers)
+        self.visitor_documents = merge_dict(self.visitor_documents, other.visitor_documents)
+
+    
 
 
 #! --------------------- MOVE TO NEW CLASS -------------------------
@@ -193,7 +218,7 @@ class DataCollector(ParseFile, Analyse):
             figure = self.histo_config
         else:
             figure = self.configure_figure()
-        Plots(n_rows=len(figure[0]), figsize=self.figsize).histogram(
+        Charts(n_rows=len(figure[0]), figsize=self.figsize).histogram(
             figure[0], figure[1], figure[2], figure[3])
 
     def configure_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
