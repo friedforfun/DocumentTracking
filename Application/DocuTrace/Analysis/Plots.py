@@ -1,8 +1,72 @@
 from matplotlib import pyplot as plt
+from graphviz import Digraph
 import numpy as np
 
+def get_edges(node_dict):
+    """Produces a list of tuples representing the edges described in the node_dict
 
-class Plots:
+    Args:
+        node_dict (dict(str, list(str))): A dictionary where each key is a node and all the points it connects to are a list of values
+
+    Returns:
+        list(str, str): A list of tuples describing the edges between 2 nodes
+    """
+    edges = []
+    for node in node_dict:
+        unique = np.unique(node_dict[node])
+        node_dict[node] = unique.tolist()
+        for neighbour in node_dict[node]:
+            edges.append((node[-4:], neighbour[-4:]))
+    return edges
+
+class Graphs:
+    def __init__(self, compute_data):
+        self.compute_data = compute_data
+
+
+    def also_likes_graph(self, document_id, visitor=None):
+        """Generate the also likes graph
+
+        Args:
+            document_id (str): Document id
+            visitor (str, optional): visitor uuid. Defaults to None.
+
+        Returns:
+            graphviz.Digraph: A digraph showing the relationship between the given docuement and other documents by readers
+        """
+        relevant_docs, readers = self.compute_data.find_relevant_docs(document_id, visitor)
+
+        graph = Digraph(name='Also likes')
+        graph.attr('graph', ranksep='0.75')
+        node_dict = {k: self.compute_data.visitor_documents.get(k, []) for k in readers}
+        edges = get_edges(node_dict)
+
+        with graph.subgraph() as context:
+            context.attr('node', shape='plaintext', fontsize='16')
+            context.edge('Readers', 'Documents')
+
+        with graph.subgraph() as readers:
+            readers.attr('node', shape='box', rank='same')
+            if visitor is not None:
+                readers.node(visitor[-4:], color='.3 .9 .7', style='filled')
+            for node in node_dict:
+                readers.node(node[-4:])
+
+        with graph.subgraph() as documents:
+            documents.attr('node', shape='circle', rank='same')
+            documents.node(document_id[-4:], color='.3 .9 .7', style='filled')
+            for doc in relevant_docs:
+                if doc != []:
+                    documents.node(doc[-4:])
+        if visitor is not None:
+            graph.edge(visitor[-4:], document_id[-4:])
+            
+        for edge in edges:
+            graph.edge(*edge)
+
+        return graph
+
+class Charts:
     """Class with functions to aid plotting charts
 
         Args:
