@@ -51,34 +51,48 @@ def stream_read_json(fname):
 
 
 class ParseFile:
-    def __init__(self, path=None,  chunk_size=100000):
+    """Fast file reading class
+
+    Args:
+        path (str, optional): Path to the file. Defaults to None.
+        chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000. Defaults to 5000000.
+    """
+
+    def __init__(self, path=None,  chunk_size=5000000):
         if path is not None:
             self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
         else:
             self.file_iter = None
         self.path = path
 
-    def set_read_path(self, path, chunk_size=100000):
+
+    def set_read_path(self, path, chunk_size=5000000):
         """Specify the path for LocationViews to read from
 
         Args:
             path (str): Path to the datafile
+            chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000. Defaults to 5000000.
         """
         self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
 
-    @debug
-    def parse_file(self, data_collector, concurrent=False, max_workers=None):
+
+
+    def parse_file(self, data_collector, concurrent=True, max_workers=None):
         """Apply a list of functions to the file_iter
 
         Args:
-            fn_list (list(dict->None)): A list of functions that all take a dict as a parameter
-            concurrent (bool, optional): Experimental, currently much slower than without (cost of instantiating threads too great). Defaults to False.
+            data_collector(DataCollector): A data collection class used to collate all the data.
+            concurrent(bool, optional): Enable concurrency when reading. Defaults to True.
+            max_workers (int, optional): The max number of workers to process the file input. Defaults to None.
+
 
         Raises:
             AttributeError: When a path has not been specified for the file iterator
         """
+
         if self.file_iter is None:
             raise AttributeError('File iterator not set')
+
         logger.debug('Begin reading file: {}'.format(self.path))
         if concurrent:
             logger.warning('Multiprocessing has been enabled in FileRead.parse_file, this is experimental and may result in worse performance with small files.')
@@ -177,6 +191,14 @@ class JsonProcessContextManager():
 
 
 class JsonParseProcess(Process):
+    """A process subclass to handle parsing the JSON file
+
+    Args:
+        name (Any): A unique identifier for the process
+        data_collector (DataCollector): A data collector object that will be written back to after reading is complete
+        queue (JoinableQueue): A multiprocessing JoinableQueue, this process will consume elements in the queue
+        feedback_queue (JoinableQueue): A multiprocessing JoinableQueue, this process will produce elements for this queue
+    """
     def __init__(self, name, data_collector, queue, feedback_queue):
         super(Process, self).__init__()
         self.t_name = name
@@ -198,6 +220,8 @@ class JsonParseProcess(Process):
         return self
 
     def run(self):
+        """Begin the process
+        """
         logger.debug('Process: {} - running'.format(self.t_name))
         try:
             while True:
