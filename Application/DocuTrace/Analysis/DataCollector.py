@@ -72,8 +72,12 @@ class ReadingData:
     def __str__(self):
         return "<uuid:%s, Read time:%s, Number of reads:%s>\n" % (self.uuid, self.read_time, self.reads)
 
-
-
+    def __add__(self, other):
+        if self.uuid != other.uuid:
+            return NotImplemented
+        total_read_time = self.read_time + other.read_time
+        total_reads = self.reads + other.reads
+        return ReadingData(self.uuid, total_read_time, total_reads)
 class DataCollector(Analyse):
 
     def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, build_reader_profiles=True, collect_doc_data=True):
@@ -108,11 +112,11 @@ class DataCollector(Analyse):
         """
         self.path = path
 
-    def gather_data(self, threaded=False, num_threads=1, chunk_size=100000):
+    def gather_data(self, concurrent=False, max_workers=None, chunk_size=100000):
         """Compute the counts of the required data
         """
         ParseFile(self.path, chunk_size=chunk_size).parse_file(
-            self, threaded=threaded, num_threads=num_threads)
+            self, concurrent=concurrent, max_workers=max_workers)
         self.counted = True
 
 
@@ -204,10 +208,17 @@ class DataCollector(Analyse):
         self.countries = merge_dict(self.countries, other.countries)
         self.continents = merge_dict(self.continents, other.continents)
         self.browser_families = merge_dict(self.browser_families, other.browser_families)
+        self.reader_profiles = merge_dict(self.reader_profiles, other.reader_profiles)
         self.document_readers = merge_dict(self.document_readers, other.document_readers)
         self.visitor_documents = merge_dict(self.visitor_documents, other.visitor_documents)
 
-    
+    def clear(self):
+        self.countries = {}
+        self.continents = {}
+        self.browser_families = {}
+        self.reader_profiles = {}
+        self.document_readers = {}
+        self.visitor_documents = {}
 
 
 #! --------------------- MOVE TO NEW CLASS -------------------------
