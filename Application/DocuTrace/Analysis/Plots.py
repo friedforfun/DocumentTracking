@@ -20,6 +20,11 @@ def get_edges(node_dict):
     return edges
 
 class Graphs:
+    """Class to produce graphs using graphviz
+
+    Args:
+        compute_data (ComputeData): Instance of a ComputeData object
+    """
     def __init__(self, compute_data):
         self.compute_data = compute_data
 
@@ -78,7 +83,10 @@ class Charts:
         """
     def __init__(self, n_rows=1, n_cols=1, figsize=(15, 10), bar_gap=1, x_tick_rotation=45, **kwargs):
         self.fig, self.axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize, **kwargs)
-        self.ax = self.axes.ravel()
+        if hasattr(self.axes, 'ravel'):
+            self.ax = self.axes.ravel()
+        else:
+            self.ax = [self.axes]
         self.bar_gap = bar_gap
         self.x_tick_rotation = x_tick_rotation
 
@@ -135,5 +143,4 @@ class Charts:
 
         self.fig.tight_layout()
         plt.show()
-
 
