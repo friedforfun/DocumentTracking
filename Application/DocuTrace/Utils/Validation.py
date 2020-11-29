@@ -1,8 +1,14 @@
 import errno
 import os
 import sys
+import argparse
+import regex
 
-"""Beautiful and entertaining stack overflow post by Cecil Curry. Path validity checks use this. 
+from DocuTrace.Utils.Logging import logger
+from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError, InvalidUserUUIDError
+
+
+"""Entertaining stack overflow post by Cecil Curry. Path validity checks use this. 
 https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta
 """
 
@@ -88,9 +94,84 @@ def is_pathname_valid(pathname: str) -> bool:
     # Did we mention this should be shipped with Python already?
 
 
-class InvalidPathError(Exception):
-    """Raised when an invalid path has been entered.
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+def validate_path(path: str) -> str:
+    """Validate the path string
+
+    Args:
+        path (str): A path provided by the user
+
+    Raises:
+        InvalidPathError: Invalid path was provided too many times
+
+    Returns:
+        str: A valid path
     """
-    def __init__(self, message='Invalid path entered'):
-        self.message = message
-        super().__init__(self.message)
+    tries = 0
+    if not is_pathname_valid(path) or not path.lower().endswith('.json'):
+        while (not is_pathname_valid(path) or not path.lower().endswith('.json')) and tries < 4:
+            logger.warning('Invalid path to file detected. Please check and try again. If all else fails try and absolute path.')
+            path = input('Please enter a valid path: ')
+            tries += 1
+
+        if tries > 4:
+            raise InvalidPathError('Invalid path entered too many times.')
+    return path
+
+
+def validate_task(task: str) -> str:
+    """Validate the task identifying string
+
+    Args:
+        task (str): A task id
+
+    Raises:
+        InvalidTaskIDError: Invalid task id entered too many times
+
+    Returns:
+        str: A valid task id
+    """
+    # Handle circular import
+    from DocuTrace.Utils.Tasks import task_picker
+
+    tries = 0
+    if not task in task_picker.keys():
+        while not task in task_picker.keys() and tries < 4:
+            logger.warning('Invalid task identifier has been provided, please provide one of {}'.format(list(task_picker.keys())))
+            task = input('Please enter a valid task id: ')
+            tries += 1
+        
+        if tries > 4:
+            raise InvalidTaskIDError('Invalid task id entered too many times')
+    return task
+
+
+def validate_user_uuid(user_uuid: str) -> str:
+    """Validate a user uuid string
+
+    Args:
+        user_uuid (str): A user uuid, should be 16 hexadecimal characters.
+    Raises:
+        InvalidUserUUIDError: Invalid user UUID id entered too many times
+
+    Returns:
+        str: A valid user UUID
+    """
+    tries = 0
+    _regex = regex.compile(r"^[\da-fA-F]{16}$")
+    if not _regex.fullmatch(user_uuid):
+        while not _regex.fullmatch(user_uuid):
+            logger.warning('Invalid user UUID detected. Please try again.')
+            user_uuid = input('Please enter a valid user UUID: ')
+            tries += 1
+
+        if tries > 4:
+            raise InvalidUserUUIDError('Invalid user UUID entered too many times')
+    return user_uuid.lower()
