@@ -75,8 +75,6 @@ class ParseFile:
         """
         self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
 
-
-
     def parse_file(self, data_collector, concurrent=True, max_workers=None):
         """Apply a list of functions to the file_iter
 
@@ -153,17 +151,32 @@ class JsonProcessContextManager():
         if exception_value is not None:
             logger.exception('Exception when leaving context manager: {} | Traceback: {}{'.format(exception_type, traceback))
 
+        #self.new_collectors = []
+        retrieve_data = Thread(target=self.retrieve_data, daemon=True)
+        retrieve_data.start()
+
         self.queue.join()
-        logger.debug('Queue flushed')
+        self.feedback_queue.join()
+        logger.debug('Queues flushed')
+    
+        # for collector in self.new_collectors:
+        #     self.data_collector.merge(collector)
         
-        self.new_collectors = []
-        while not self.feedback_queue.empty():
+        for process in self.processes:
+            process.terminate()
+
+    def retrieve_data(self):
+        """Start reading data from feedback queue while waiting for json queue to finish
+        """
+        while True:
             result = self.feedback_queue.get()
-            self.new_collectors.append(result)
+            if result is None:
+                break
+            self.data_collector.merge(result)
+            #self.new_collectors.append(result)
             self.feedback_queue.task_done()
-        for collector in self.new_collectors:
-            self.data_collector.merge(collector)
-        
+        self.feedback_queue.task_done()
+
 
     def json_parse(self, collector):
         while True:

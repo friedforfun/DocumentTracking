@@ -70,7 +70,7 @@ def test_apply_fn_ParseFile():
         def test_fn3(json):
             assert json.get(key_list[0]) == 'MX'
         parser.fn_list = [test_fn1, test_fn2, test_fn3]
-        parser.parse_file(DataCollector(), threaded=False)
+        parser.parse_file(DataCollector(), concurrent=False)
 
 
 def test_apply_fn_threaded_ParseFile():
@@ -87,7 +87,7 @@ def test_apply_fn_threaded_ParseFile():
         def test_fn3(json):
             assert json.get(key_list[0]) == 'MX'
         parser.fn_list = [test_fn1, test_fn2, test_fn3]
-        parser.parse_file(DataCollector(), threaded=True)
+        parser.parse_file(DataCollector(), concurrent=True)
 
 
 def test_raise_attributeerr_ParseFile():
