@@ -3,13 +3,12 @@ from user_agents import parse as ua_parse
 
 from .AbstractClasses import Analyse
 from .FileRead import ParseFile
-from .Plots import Charts
 from ..Utils.Logging import logger
 
 from .ComputeData import continent_name
 
 
-def merge_dict(own, other):
+def merge_dict(own: dict, other: dict) -> dict:
     """Merge other dict with self
 
     Args:
@@ -25,7 +24,7 @@ def merge_dict(own, other):
 
 @total_ordering
 class ReadingData:
-    """Stores user uuid, reading time and number of reads.
+    """Stores user uuid, reading time and number of reads. Implements comparison, addition, and printing operators.
 
     Args:
         uuid (str): User uuid
@@ -37,7 +36,7 @@ class ReadingData:
         self.read_time = read_time
         self.reads = reads
 
-    def new_read(self, read_time):
+    def new_read(self, read_time: int) -> None:
         """Used to update the total reading time of this user.
 
         Args:
@@ -46,7 +45,7 @@ class ReadingData:
         self.read_time += read_time
         self.reads += 1
 
-    def _is_valid_operand(self, other):
+    def _is_valid_operand(self, other) -> bool:
         return(hasattr(other, "read_time") or type(other) == int)
 
     def __eq__(self, other):
@@ -66,20 +65,35 @@ class ReadingData:
             return self.read_time < other.read_time
 
     def __repr__(self):
-        return "ReadingData(uuid:%s, Read time:%s, Number of reads:%s)" % (self.uuid, self.read_time, self.reads)
+        return "ReadingData(uuid:{}, Read time:{}, Number of reads:{})".format(self.uuid, self.read_time, self.reads)
 
     def __str__(self):
-        return "<uuid:%s, Read time:%s, Number of reads:%s>\n" % (self.uuid, self.read_time, self.reads)
+        return "<uuid:{}, Read time:{}, Number of reads:{}>".format(self.uuid, self.read_time, self.reads)
 
     def __add__(self, other):
+        if not self._is_valid_operand(other):
+            return NotImplemented
+
         if self.uuid != other.uuid:
             return NotImplemented
+
         total_read_time = self.read_time + other.read_time
         total_reads = self.reads + other.reads
         return ReadingData(self.uuid, total_read_time, total_reads)
-class DataCollector(Analyse):
 
-    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, build_reader_profiles=True, collect_doc_data=True):
+
+class DataCollector:
+    """Handles collection and orgnaisation of data
+
+    Args:
+        path (str, optional): Path to the file being read. Defaults to None.
+        count_browser (bool, optional): Count browser data? Defaults to True.
+        count_country (bool, optional): Count country data? Defaults to True.
+        count_continent (bool, optional): Count continent data? Defaults to True.
+        build_reader_profiles (bool, optional): Build reader profiles? Defaults to True.
+        collect_doc_data (bool, optional): Collect document-reader relationships? Defaults to True.
+    """
+    def __init__(self, path: str=None, count_browser: bool=True, count_country: bool=True, count_continent: bool=True, build_reader_profiles: bool=True, collect_doc_data: bool=True):
         self.path = path
         self.countries = {}
         self.continents = {}
@@ -87,7 +101,6 @@ class DataCollector(Analyse):
         self.reader_profiles = {}
         self.document_readers = {}
         self.visitor_documents = {}
-        self.figsize = fig_dimensions
         self.counted = False
         self.histo_config = None
 
@@ -103,7 +116,7 @@ class DataCollector(Analyse):
         if collect_doc_data:
             self.data_fns.append(self.collect_document_readers)
 
-    def set_read_path(self, path):
+    def set_read_path(self, path: str) -> None:
         """Specify the path for LocationViews to read from
 
         Args:
@@ -111,7 +124,7 @@ class DataCollector(Analyse):
         """
         self.path = path
 
-    def gather_data(self, concurrent=True, max_workers=None, chunk_size=500000):
+    def gather_data(self, concurrent: bool=True, max_workers: int=None, chunk_size: int=500000) -> None:
         """Compute the counts of the required data
         """
         ParseFile(self.path, chunk_size=chunk_size).parse_file(
@@ -119,7 +132,7 @@ class DataCollector(Analyse):
         self.counted = True
 
 
-    def count_countries(self, json):
+    def count_countries(self, json: dict) -> None:
         """Increment the dictionary counter for the country in json
 
         Args:
@@ -133,7 +146,7 @@ class DataCollector(Analyse):
                 self.countries[location] += 1
         
 
-    def count_continents(self, json):
+    def count_continents(self, json: dict) -> None:
         """Increment the dictionary counter for the continent derived from the country in json
 
         Args:
@@ -148,7 +161,7 @@ class DataCollector(Analyse):
                 self.continents[continent_n] += 1
         
 
-    def count_browsers(self, json):
+    def count_browsers(self, json: dict) -> None:
         """Update the browser family count field in self
 
         Args:
@@ -164,7 +177,7 @@ class DataCollector(Analyse):
                 self.browser_families[browser] += 1
 
 
-    def collect_reading_data(self, json):
+    def collect_reading_data(self, json: dict) -> None:
         """Update reading data for each uuid
 
         Args:
@@ -179,7 +192,7 @@ class DataCollector(Analyse):
                 self.reader_profiles[uuid].new_read(reading_time)
 
 
-    def collect_document_readers(self, json):
+    def collect_document_readers(self, json: dict) -> None:
         """Collect document id and reader id information
 
         Args:
@@ -198,7 +211,7 @@ class DataCollector(Analyse):
                 self.visitor_documents[uuid].append(document)
 
 
-    def merge(self, other):
+    def merge(self, other) -> None:
         """Merge the dictionaries of other with self
 
         Args:
@@ -211,7 +224,7 @@ class DataCollector(Analyse):
         self.document_readers = merge_dict(self.document_readers, other.document_readers)
         self.visitor_documents = merge_dict(self.visitor_documents, other.visitor_documents)
 
-    def clear(self):
+    def clear(self) -> None:
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
@@ -222,50 +235,4 @@ class DataCollector(Analyse):
 
 #! --------------------- MOVE TO NEW CLASS -------------------------
 
-
-    def histogram(self):
-        if self.histo_config is not None:
-            figure = self.histo_config
-        else:
-            figure = self.configure_figure()
-        Charts(n_rows=len(figure[0]), figsize=self.figsize).histogram(
-            figure[0], figure[1], figure[2], figure[3])
-
-    def configure_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
-        if sorted:
-            self.sorted(reverse)
-        
-        continents = self.continents
-        countries = self.countries
-        browsers = self.browser_families
-        if n_continents is not None:
-            continents = dict(list(self.continents.items())[:n_continents])
-        if n_countries is not None:
-            countries = dict(list(self.countries.items())[:n_countries])
-        if n_browsers is not None:
-            browsers = dict(list(self.browser_families.items())[:n_browsers])
-        data = []
-        titles = []
-        x_labels = []
-        y_labels = []
-        if show_continents:
-            data.append(continents)
-            titles.append('Views from each continent')
-            x_labels.append('')
-            y_labels.append('Continent')
-
-        if show_countries:
-            data.append(countries)
-            titles.append('Views from each country')
-            x_labels.append('')
-            y_labels.append('Country')
-
-        if show_browsers:
-            data.append(browsers)
-            titles.append('Views from each browser')
-            x_labels.append('')
-            y_labels.append('Browser')
-
-        self.histo_config = (data, titles, x_labels, y_labels)
-        return (data, titles, x_labels, y_labels)
 

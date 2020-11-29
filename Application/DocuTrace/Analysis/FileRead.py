@@ -7,7 +7,7 @@ from DocuTrace.Utils.Logging import logger, debug, logging
 import time
 
 
-def stream_file_chunks(file_name, chunk_size=5000000):
+def stream_file_chunks(file_name: str, chunk_size: int=5000000):
     """Use an iterator over the file, using a hint for the number of bytes for each 
 
     Args:
@@ -24,8 +24,9 @@ def stream_file_chunks(file_name, chunk_size=5000000):
                 break
             yield data
 
-def stream_read_json(fname):
-    """Lazy read json generator inspiration for the stream_file_chunks solution.
+
+def stream_read_json(fname: str):
+    """Lazy read json generator inspiration for the stream_file_chunks solution (Not used).
     https://stackoverflow.com/questions/6886283/how-i-can-i-lazily-read-multiple-json-values-from-a-file-stream-in-python
 
     Args:
@@ -54,10 +55,10 @@ class ParseFile:
 
     Args:
         path (str, optional): Path to the file. Defaults to None.
-        chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000. Defaults to 5000000.
+        chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000.
     """
 
-    def __init__(self, path=None,  chunk_size=5000000):
+    def __init__(self, path: str=None,  chunk_size: int=5000000):
         if path is not None:
             self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
         else:
@@ -65,17 +66,17 @@ class ParseFile:
         self.path = path
 
 
-    def set_read_path(self, path, chunk_size=5000000):
+    def set_read_path(self, path: str, chunk_size: int=5000000) -> None:
         """Specify the path for LocationViews to read from
 
         Args:
             path (str): Path to the datafile
-            chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000. Defaults to 5000000.
+            chunk_size (int, optional): The number of bytes each readlines() call will attempt to consume. Defaults to 5000000.
         """
         self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
 
     #@debug
-    def parse_file(self, data_collector, concurrent=True, max_workers=None):
+    def parse_file(self, data_collector, concurrent: bool=True, max_workers: int=None) -> None:
         """Apply a list of functions to the file_iter
 
         Args:
@@ -133,7 +134,7 @@ class JsonProcessContextManager():
         self.processes = [JsonParseProcess(i, self.data_collector, self.queue, self.feedback_queue) for i in range(max_workers)]
         
 
-    def enqueue(self, chunk):
+    def enqueue(self, chunk: list) -> None:
         """Add a chunk to the queue to be processed by consumer processes
 
         Args:
@@ -183,7 +184,7 @@ class JsonParseProcess(Process):
         queue (JoinableQueue): A multiprocessing JoinableQueue, this process will consume elements in the queue
         feedback_queue (JoinableQueue): A multiprocessing JoinableQueue, this process will produce elements for this queue
     """
-    def __init__(self, name, data_collector, queue, feedback_queue):
+    def __init__(self, name, data_collector, queue: JoinableQueue, feedback_queue: JoinableQueue):
         super(Process, self).__init__()
         self.t_name = name
         self.data_collector = deepcopy(data_collector)
@@ -191,7 +192,7 @@ class JsonParseProcess(Process):
         self.feedback_queue = feedback_queue
         self.queue = queue
 
-    def set_queue(self, queue):
+    def set_queue(self, queue: JoinableQueue):
         """Assign a reference to the queue to consume from
 
         Args:
@@ -203,7 +204,7 @@ class JsonParseProcess(Process):
         self.queue = queue
         return self
 
-    def run(self):
+    def run(self) -> None:
         """Begin the process
         """
         logger.debug('Process: {} - running'.format(self.t_name))
@@ -211,10 +212,12 @@ class JsonParseProcess(Process):
             while True:
                 chunk = self.queue.get()
                 logger.debug('Process <{}>... Get from queue. | Chunk lines: {}'.format(self.t_name, len(chunk)))
+
                 if chunk is None:
                     logger.debug('PROCESS BREAKING FROM WHILE LOOP')
                     break
                 start_time = time.time()
+
                 for line in chunk:
                     try:
                         json_line = line.rstrip()
@@ -222,10 +225,13 @@ class JsonParseProcess(Process):
                         [fn(parsed_json) for fn in self.fn_list]
                     except json.JSONDecodeError as e:
                         logger.exception('JSON decode error encountered in Process: {}. Exception: {}'.format(self.t_name, e))
+
                 to_queue = deepcopy(self.data_collector)
+                
                 logger.debug('Putting object on queue with len countries={}. Should have: {}'.format(len(to_queue.countries), len(self.data_collector.countries)))
                 self.feedback_queue.put(to_queue)
                 self.data_collector.clear()
+                
                 self.queue.task_done()
                 duration = time.time() - start_time
                 logger.debug('Process <{}>... one chunk processed. Duration: {} | Chunk lines: {}'.format(self.t_name, duration, len(chunk)))
