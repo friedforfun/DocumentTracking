@@ -2,8 +2,9 @@ import numpy as np
 from copy import deepcopy
 import pycountry
 import pycountry_convert
+from .Plots import Charts
 
-def sort_dict_by_value(collection, reverse=True):
+def sort_dict_by_value(collection: dict, reverse: bool=True) -> list:
     """Sort a dictionary by the values inside, returns a list of keys
 
     Args:
@@ -16,7 +17,7 @@ def sort_dict_by_value(collection, reverse=True):
     return [k for k, _ in sorted(collection.items(), key=lambda item: item[1], reverse=reverse)]
 
 
-def top_n_sorted(collection, n=10):
+def top_n_sorted(collection: dict, n: int=10) -> list:
     """Get the top n sorted by their values in the dict
 
     Args:
@@ -29,7 +30,7 @@ def top_n_sorted(collection, n=10):
     return sort_dict_by_value(collection, reverse=True)[:n]
 
 
-def country_name(code):
+def country_name(code: str) -> str:
     """Get the country name from its alpha2 code
 
     Args:
@@ -45,7 +46,7 @@ def country_name(code):
         return country.name
 
 
-def continent_name(alpha2_country):
+def continent_name(alpha2_country:str) -> str:
     """Get the contenent name from the country
 
     Args:
@@ -62,15 +63,17 @@ def continent_name(alpha2_country):
     return cont
     
 class ComputeData:
-    def __init__(self, data_collector):
+    def __init__(self, data_collector, fig_size=(10, 15)):
         self.countries = data_collector.countries
         self.continents = data_collector.continents
         self.browser_families = data_collector.browser_families
         self.reader_profiles = data_collector.reader_profiles
         self.document_readers = data_collector.document_readers
         self.visitor_documents = data_collector.visitor_documents
+        self.histo_config = None
+        self.fig_size = fig_size
 
-    def also_likes_top_10(self, document, visitor=None):
+    def also_likes_top_10(self, document: str, visitor: str=None) -> list:
         """Get the top 10 also likes for the given parameters
 
         Args:
@@ -83,13 +86,13 @@ class ComputeData:
         return self.also_likes(document, visitor=visitor, sort_fn=top_n_sorted)
 
 
-    def also_likes(self, document, visitor=None, sort_fn=sort_dict_by_value):
+    def also_likes(self, document: str, visitor: str=None, sort_fn=sort_dict_by_value) -> list:
         """For a given document identify which other documents have been read by a reader of this document, when visitor is given exclude them from the resulting list.
 
         Args:
             document (str): Document id
             visitor (str, optional): visitor uuid. Defaults to None.
-            sort_fn (dict(str, int) -> list(str), optional): A sorting function that takes a dict as its argument and returns a list. Defaults to sort_dict_by_value.
+            sort_fn (dict(str) -> list(str), optional): A sorting function that takes a dict as its argument and returns a list. Defaults to sort_dict_by_value.
 
         Returns:
             List(str): A list of document ids, sorted by the provided function
@@ -98,7 +101,7 @@ class ComputeData:
         return sort_fn(also_likes_dict)
 
 
-    def find_also_likes_counts(self, document, visitor=None):
+    def find_also_likes_counts(self, document: str, visitor:str =None) -> dict:
         """Computes also likes based on a document id, and (optionally) a visitor id
 
         Args:
@@ -112,7 +115,19 @@ class ComputeData:
         keys, counts = np.unique(relevant_docs, return_counts=True)
         return dict(zip(keys, counts))
 
-    def find_relevant_docs(self, document, visitor=None):
+    def find_relevant_docs(self, document: str, visitor: str=None) -> tuple:
+        """Finds all documents relevant to the given document, and all readers except the given visitor
+
+        Args:
+            document (str): Document id
+            visitor (str, optional): visitor uuid. Defaults to None.
+
+        Raises:
+            KeyError: Raised when document is not found
+
+        Returns:
+            [(numpy.array(str), numpy.array(str))]: [description]
+        """
         # key error raised if document not found
         # deep copy to prevent mutating self.document_readers
         readers = np.array(deepcopy(self.document_readers.get(document)))
@@ -130,7 +145,7 @@ class ComputeData:
         relevant_docs = relevant_docs[relevant_docs != document]
         return relevant_docs, readers
 
-    def sort(self, reverse=True, sort_countries=True, sort_continents=True, sort_browsers=True, sort_reader_profiles=True):
+    def sort(self, reverse: bool=True, sort_countries: bool=True, sort_continents: bool=True, sort_browsers: bool=True, sort_reader_profiles: bool=True) -> None:
         """Sort each dict by its values
 
         Args:
@@ -157,7 +172,7 @@ class ComputeData:
                 self.reader_profiles.items(), key=lambda item: item[1], reverse=reverse)}
 
 
-    def top_reads(self, top_n=10, to_print=True):
+    def top_reads(self, top_n=10, to_print=True) -> list:
         """Find the top readers
 
         Args:
@@ -173,3 +188,50 @@ class ComputeData:
             [print(reader) for reader in top_readers]
         return top_readers
 
+
+    def histogram(self):
+        if self.histo_config is not None:
+            figure = self.histo_config
+        else:
+            figure = self.configure_figure()
+        Charts(n_rows=len(figure[0]), figsize=self.fig_size).histogram(
+            figure[0], figure[1], figure[2], figure[3])
+
+
+    def configure_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
+        if sorted:
+            self.sort(reverse)
+
+        continents = self.continents
+        countries = self.countries
+        browsers = self.browser_families
+        if n_continents is not None:
+            continents = dict(list(self.continents.items())[:n_continents])
+        if n_countries is not None:
+            countries = dict(list(self.countries.items())[:n_countries])
+        if n_browsers is not None:
+            browsers = dict(list(self.browser_families.items())[:n_browsers])
+        data = []
+        titles = []
+        x_labels = []
+        y_labels = []
+        if show_continents:
+            data.append(continents)
+            titles.append('Views from each continent')
+            x_labels.append('')
+            y_labels.append('Continent')
+
+        if show_countries:
+            data.append(countries)
+            titles.append('Views from each country')
+            x_labels.append('')
+            y_labels.append('Country')
+
+        if show_browsers:
+            data.append(browsers)
+            titles.append('Views from each browser')
+            x_labels.append('')
+            y_labels.append('Browser')
+
+        self.histo_config = (data, titles, x_labels, y_labels)
+        return (data, titles, x_labels, y_labels)
