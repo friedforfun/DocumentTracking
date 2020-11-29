@@ -18,6 +18,8 @@ The **DocuTrace** module has the following dependencies:
 - pycountry==20.7.3
 - pycountry-convert==0.7.2
 - graphviz==0.15
+- regex==2020.11.13
+- alive-progress==1.6.1
 
 **Test** requirements:
 - pytest==6.1.2
