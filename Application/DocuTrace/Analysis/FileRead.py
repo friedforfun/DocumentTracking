@@ -1,8 +1,7 @@
 from copy import deepcopy
 import json
-import os
 import threading
-from multiprocessing import Queue, JoinableQueue, Process, cpu_count, Pipe
+from multiprocessing import JoinableQueue, Process, cpu_count
 from threading import Thread
 from DocuTrace.Utils.Logging import logger, debug, logging
 import time
@@ -75,6 +74,7 @@ class ParseFile:
         """
         self.file_iter = stream_file_chunks(path, chunk_size=chunk_size)
 
+    #@debug
     def parse_file(self, data_collector, concurrent=True, max_workers=None):
         """Apply a list of functions to the file_iter
 
@@ -151,16 +151,12 @@ class JsonProcessContextManager():
         if exception_value is not None:
             logger.exception('Exception when leaving context manager: {} | Traceback: {}{'.format(exception_type, traceback))
 
-        #self.new_collectors = []
         retrieve_data = Thread(target=self.retrieve_data, daemon=True)
         retrieve_data.start()
 
         self.queue.join()
         self.feedback_queue.join()
         logger.debug('Queues flushed')
-    
-        # for collector in self.new_collectors:
-        #     self.data_collector.merge(collector)
         
         for process in self.processes:
             process.terminate()
@@ -176,31 +172,6 @@ class JsonProcessContextManager():
             #self.new_collectors.append(result)
             self.feedback_queue.task_done()
         self.feedback_queue.task_done()
-
-
-    def json_parse(self, collector):
-        while True:
-            chunk = self.queue.get()
-            logger.debug('Process <{}>... Get from queue. | Chunk lines: {}'.format(
-                os.getpid(), len(chunk)))
-            if chunk is None:
-                logger.debug('PROCESS BREAKING FROM WHILE LOOP')
-                break
-            start_time = time.time()
-            for line in chunk:
-                try:
-                    json_line = line.rstrip()
-                    parsed_json = json.loads(json_line)
-                    [fn(parsed_json) for fn in collector.data_fns]
-                except json.JSONDecodeError as e:
-                    logger.exception(
-                        'JSON decode error encountered in Process: {}. Exception: {}'.format(os.getpid(), e))
-            self.queue.task_done()
-            duration = time.time() - start_time
-            logger.debug('Process <{}>... one chunk processed. Duration: {} | Chunk lines: {}'.format(os.getpid(), duration, len(chunk)))
-
-        self.queue.task_done()
-        logger.debug('Process <{}>... Terminating'.format(os.getpid()))
 
 
 class JsonParseProcess(Process):
