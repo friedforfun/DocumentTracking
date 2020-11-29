@@ -1,6 +1,5 @@
 from functools import total_ordering
 from user_agents import parse as ua_parse
-from threading import BoundedSemaphore
 
 from .AbstractClasses import Analyse
 from .FileRead import ParseFile
@@ -112,7 +111,7 @@ class DataCollector(Analyse):
         """
         self.path = path
 
-    def gather_data(self, concurrent=False, max_workers=None, chunk_size=100000):
+    def gather_data(self, concurrent=True, max_workers=None, chunk_size=500000):
         """Compute the counts of the required data
         """
         ParseFile(self.path, chunk_size=chunk_size).parse_file(
