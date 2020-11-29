@@ -14,5 +14,5 @@ def debug(func):
     def inner(*args, **kwargs):
         logger.setLevel(logging.DEBUG)
         func(*args, **kwargs)
-        logger.setLevel(logging.WARN)
+        logger.setLevel(logging.INFO)
     return inner
