@@ -3,7 +3,7 @@ from user_agents import parse as ua_parse
 from collections import OrderedDict
 
 from .FileRead import ParseFile
-from ..Utils.Logging import logger
+from ..Utils.Logging import logger, debug
 
 from .ComputeData import continent_name
 
@@ -20,6 +20,7 @@ def merge_dict(own: dict, other: dict) -> dict:
             own[element] = other[element]
         else:
             own[element] += other[element]
+    logger.debug('DEBUG: {}'.format(own))
     return own
 
 @total_ordering
@@ -45,11 +46,19 @@ class ReadingData:
         self.read_time += read_time
         self.reads += 1
 
-    def _is_valid_operand(self, other) -> bool:
+    def is_valid_operand(self, other) -> bool:
+        """Check if other is a valid operand
+
+        Args:
+            other (ReadingData | int): Other instance of this class or an integer
+
+        Returns:
+            bool: True if other is a valid operand
+        """
         return(hasattr(other, "read_time") or type(other) == int)
 
     def __eq__(self, other):
-        if not self._is_valid_operand(other):
+        if not self.is_valid_operand(other):
             return NotImplemented
         if type(other) == int:
             return self.read_time == other
@@ -57,7 +66,7 @@ class ReadingData:
             return self.read_time == other.read_time
 
     def __lt__(self, other):
-        if not self._is_valid_operand(other):
+        if not self.is_valid_operand(other):
             return NotImplemented
         if type(other) == int:
             return self.read_time < other
@@ -71,7 +80,7 @@ class ReadingData:
         return "uuid: {0} | Read time: {1:{width}} | Number of reads: {2:{r_width}}".format(self.uuid, self.read_time, self.reads, width=8, r_width=4)
 
     def __add__(self, other):
-        if not self._is_valid_operand(other):
+        if not self.is_valid_operand(other):
             return NotImplemented
 
         if self.uuid != other.uuid:
@@ -80,6 +89,103 @@ class ReadingData:
         total_read_time = self.read_time + other.read_time
         total_reads = self.reads + other.reads
         return ReadingData(self.uuid, total_read_time, total_reads)
+
+
+class DocLocation:
+    def __init__(self, uuid, countries=None, continents=None):
+        self.uuid = uuid
+
+        if countries is None:
+            self.countries = {}
+        else:
+            self.countries = countries
+
+        if continents is None:
+            self.continents = {}
+        else:
+            self.continents = continents
+
+
+    def add_location(self, location):
+
+        if self.countries.get(location, None) is None:
+            self.countries[location] = 1
+        else:
+            self.countries[location] += 1
+
+        continent_n = continent_name(location)
+        if self.continents.get(continent_n, None) is None:
+            self.continents[continent_n] = 1
+        else:
+            self.continents[continent_n] += 1
+        return DocLocation(self.uuid, self.countries, self.continents)
+
+
+    def is_valid_operand(self, other):
+        """Check if other is a valid operand
+
+        Args:
+            other (DocLocation): Other instance of this class
+
+        Returns:
+            bool: True if other is a valid operand
+        """
+        return (hasattr(other, 'uuid') and hasattr(other, 'countries') and hasattr(other, 'continents'))
+
+    #@debug
+    def __add__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+
+        if self.uuid != other.uuid:
+            return NotImplemented
+
+        new_countries = merge_dict(self.countries, other.countries)
+        new_continents = merge_dict(self.continents, other.continents)
+        logger.debug('{}'.format(new_countries))
+        return DocLocation(self.uuid, new_countries, new_continents)
+        
+
+@total_ordering
+class BrowserData:
+    def __init__(self, short_name, long_name, count=1):
+        self.short_name = short_name
+        self.long_name = long_name
+        self.count = count
+
+    def is_valid_operand(self, other):
+        return (hasattr(other, 'count') or type(other) == int)
+
+
+    def __eq__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.count == other
+        return self.count == other.count
+
+
+    def __lt__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.count < other
+        return self.count < other.count
+
+
+    def __add__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+
+        if self.short_name != other.short_name:
+            return NotImplemented
+
+        if type(other) == int:
+            new_count = self.count + other
+        else:
+            new_count = self.count + other.count
+
+        return BrowserData(self.short_name, self.long_name, new_count)
 
 
 class DataCollector:
@@ -93,9 +199,10 @@ class DataCollector:
         build_reader_profiles (bool, optional): Build reader profiles? Defaults to True.
         collect_doc_data (bool, optional): Collect document-reader relationships? Defaults to True.
     """
-    def __init__(self, path: str=None, count_browser: bool=True, count_country: bool=True, count_continent: bool=True, build_reader_profiles: bool=True, collect_doc_data: bool=True):
+    def __init__(self, path: str=None, count_doc_locations: bool=True, count_browser: bool=True, count_country: bool=True, count_continent: bool=True, build_reader_profiles: bool=True, collect_doc_data: bool=True):
         self.path = path
         self.countries = {}
+        self.doc_locations = {}
         self.continents = {}
         self.browser_families = {}
         self.reader_profiles = OrderedDict()
@@ -105,6 +212,8 @@ class DataCollector:
         self.histo_config = None
 
         self.data_fns = []
+        if count_doc_locations:
+            self.data_fns.append(self.find_doc_locations)
         if count_browser:
             self.data_fns.append(self.count_browsers)
         if count_country:
@@ -131,6 +240,23 @@ class DataCollector:
             self, concurrent=concurrent, max_workers=max_workers)
         self.counted = True
 
+
+    def find_doc_locations(self, json: dict) -> None:
+        """Collect all document location data
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        doc_uuid = json.get('subject_doc_id', None)
+        location = json.get('visitor_country', None)
+        if doc_uuid is not None and location is not None:
+            if self.doc_locations.get(doc_uuid, None) is None:
+                doc = DocLocation(doc_uuid).add_location(location)
+                self.doc_locations[doc_uuid] = doc
+            else:
+                doc = DocLocation(doc_uuid).add_location(location)
+                self.doc_locations[doc_uuid] += doc
+                
 
     def count_countries(self, json: dict) -> None:
         """Increment the dictionary counter for the country in json
@@ -172,9 +298,9 @@ class DataCollector:
             user_agent = ua_parse(ua_string)
             browser = user_agent.browser.family
             if self.browser_families.get(browser, None) is None:
-                self.browser_families[browser] = 1
+                self.browser_families[browser] = BrowserData(browser, ua_string)
             else:
-                self.browser_families[browser] += 1
+                self.browser_families[browser] += BrowserData(browser, ua_string)
 
 
     def collect_reading_data(self, json: dict) -> None:
@@ -198,13 +324,14 @@ class DataCollector:
         Args:
             json (dict): dict returned by json.load
         """
-        document = json.get('env_doc_id')
+        document = json.get('subject_doc_id')
         uuid = json.get('visitor_uuid')
         if document is not None and uuid is not None:
             if self.document_readers.get(document, None) is None:
                 self.document_readers[document] = [uuid]
             else:
                 self.document_readers[document].append(uuid)
+
             if self.visitor_documents.get(uuid, None) is None:
                 self.visitor_documents[uuid] = [document]
             else:
@@ -217,6 +344,7 @@ class DataCollector:
         Args:
             other (DataCollector): other must be a DataCollector instance
         """
+        self.doc_locations = merge_dict(self.doc_locations, other.doc_locations)
         self.countries = merge_dict(self.countries, other.countries)
         self.continents = merge_dict(self.continents, other.continents)
         self.browser_families = merge_dict(self.browser_families, other.browser_families)
@@ -225,8 +353,11 @@ class DataCollector:
         self.visitor_documents = merge_dict(self.visitor_documents, other.visitor_documents)
 
     def clear(self) -> None:
+        """Clear the data in this dict
+        """
         self.countries = {}
         self.continents = {}
+        self.doc_locations ={}
         self.browser_families = {}
         self.reader_profiles = {}
         self.document_readers = {}

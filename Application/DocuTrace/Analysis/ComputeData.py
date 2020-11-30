@@ -65,7 +65,8 @@ def continent_name(alpha2_country:str) -> str:
     return cont
     
 class ComputeData:
-    def __init__(self, data_collector, fig_size=(10, 15)):
+    def __init__(self, data_collector, fig_size=(5, 10)):
+        self.doc_locations = data_collector.doc_locations
         self.countries = data_collector.countries
         self.continents = data_collector.continents
         self.browser_families = data_collector.browser_families
@@ -197,12 +198,51 @@ class ComputeData:
         if self.histo_config is not None:
             figure = self.histo_config
         else:
-            figure = self.configure_figure()
-        Charts(n_rows=len(figure[0]), figsize=self.fig_size).histogram(
+            raise ValueError('histogram construct function must be run first')
+
+        return Charts(n_rows=len(figure[0]), figsize=self.fig_size).histogram(
             figure[0], figure[1], figure[2], figure[3])
 
 
-    def configure_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
+    def construct_document_counts_figure(self, doc_uuid, show_countries=True, show_continents=True, sorted=True, reverse=True, n_continents=None, n_countries=None):
+        if sorted:
+            self.sort(reverse)
+
+        #! Raises KeyError
+        doc_data = self.doc_locations.get(doc_uuid, None)
+        if doc_data is None:
+            raise ValueError('Doc UUID not found')
+
+        continents = doc_data.continents
+        countries = doc_data.countries
+
+        if n_continents is not None:
+            continents = dict(list(doc_data.continents.items())[:n_continents])
+
+        if n_countries is not None:
+            countries = dict(list(doc_data.countries.items())[:n_countries])
+
+        data = []
+        titles = []
+        x_labels = []
+        y_labels = []
+        if show_continents:
+            data.append(continents)
+            titles.append('Document views from each continent')
+            x_labels.append('')
+            y_labels.append('Continent')
+
+        if show_countries:
+            data.append(countries)
+            titles.append('Document views from each country')
+            x_labels.append('')
+            y_labels.append('Country')
+        
+        self.histo_config = (data, titles, x_labels, y_labels)
+        return (data, titles, x_labels, y_labels)
+
+
+    def construct_counts_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
         if sorted:
             self.sort(reverse)
 
