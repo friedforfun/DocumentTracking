@@ -94,7 +94,7 @@ class ParseFile:
 
         logger.debug('Begin reading file: {}'.format(self.path))
         if concurrent:
-            logger.warning('Multiprocessing has been enabled in FileRead.parse_file, this is experimental and may result in worse performance with small files.')
+            logger.info('Multiprocessing has been enabled in FileRead.parse_file.')
             with JsonProcessContextManager(data_collector, max_workers) as jtcm:
                 for chunk in self.file_iter:
                     jtcm.enqueue(chunk)
@@ -228,7 +228,7 @@ class JsonParseProcess(Process):
 
                 to_queue = deepcopy(self.data_collector)
                 
-                logger.debug('Putting object on queue with len countries={}. Should have: {}'.format(len(to_queue.countries), len(self.data_collector.countries)))
+                #logger.debug('Putting object on queue with len countries={}. Should have: {}'.format(len(to_queue.countries), len(self.data_collector.countries)))
                 self.feedback_queue.put(to_queue)
                 self.data_collector.clear()
                 
