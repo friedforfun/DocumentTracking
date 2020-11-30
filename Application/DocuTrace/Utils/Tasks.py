@@ -21,12 +21,18 @@ def task_1(data_collector: DataCollector, args):
 
 def task_2a(data_collector: DataCollector, args):
     logger.info(
-        'Task 2a. Specifies a document UUID, and return a histogram of countries of the viewers.')
+        'Task 2a. Specifiy a document UUID, and return a histogram of countries of the viewers.')
     #! Render histogram inside gui
     #! Supply n_countries modification logic
-    compute = ComputeData(data_collector)
-    compute.configure_figure(show_continents=False, show_browsers=False, n_countries=20)
-    compute.histogram()
+    try:
+        doc_uuid = get_doc_uuid(args)
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        compute.construct_document_counts_figure(doc_uuid, show_continents=False, n_countries=n)
+        gui.open(compute, doc_uuid=doc_uuid, n=n)
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 2a')
 
 def task_2b(data_collector: DataCollector, args):
     logger.info(
@@ -50,7 +56,7 @@ def task_3b(data_collector: DataCollector, args):
     compute.configure_figure(show_countries=False, show_continents=False, n_browsers=20)
     compute.histogram()
 
-def task_4d(data_collector: DataCollector, args):
+def task_4(data_collector: DataCollector, args):
     logger.info('Task 4d: 10 most avid readers.')
     compute = ComputeData(data_collector)
     compute.sort(sort_countries=False, sort_continents=False, sort_browsers=False)
@@ -58,15 +64,18 @@ def task_4d(data_collector: DataCollector, args):
         if i < 10:
             print('{:{width}} | {}'.format(i, profile, width=4))
 
-def task_5(data_collector: DataCollector, args):
-    logger.info('Task 5: Also likes top n documents.')
+def task_5d(data_collector: DataCollector, args):
+    logger.info('Task 5d: Also likes top n documents.')
     #! Dont forget to catch key errors
     try:
         doc_uuid = get_doc_uuid(args)
         user_uuid = get_user_uuid(args)
         n = get_n(args)
         compute = ComputeData(data_collector)
-        compute.also_likes(doc_uuid, user_uuid, sort_fn=top_n_sorted, n=n)
+        also_likes = compute.also_likes(doc_uuid, user_uuid, sort_fn=top_n_sorted, n=n)
+        for i, doc in enumerate(also_likes):
+            print(i+1, ' | ', doc)
+
     except Exception as e:
         logger.exception('Exception encountered during Task 5')
 
@@ -78,7 +87,7 @@ def task_6(data_collector: DataCollector, args):
 
 def task_7(data_collector: DataCollector, args):
     logger.info('Task 7: Open the GUI')
-    gui.open()
+    gui.open(ComputeData(data_collector))
 
 def task_8(data_collector: DataCollector, args):
     logger.info('Task 8: Command line, This is it!')
@@ -90,8 +99,8 @@ task_picker['2a'] = task_2a
 task_picker['2b'] = task_2b
 task_picker['3a'] = task_3a
 task_picker['3b'] = task_3b
-task_picker['4d'] = task_4d
-task_picker['5'] = task_5
+task_picker['4'] = task_4
+task_picker['5d'] = task_5d
 task_picker['6'] = task_6
 task_picker['7'] = task_7
 task_picker['8'] = task_8
@@ -116,8 +125,11 @@ def tasks(data_collector: DataCollector, thread: Thread, task_id: str, args) -> 
     loading_event.set()
     loading_bar.join()
 
-    while not finished:
+    if args.exit_early:
         finished, task_id, args = begin_task(data_collector, task_id, args)
+    else:
+        while not finished:
+            finished, task_id, args = begin_task(data_collector, task_id, args)
 
 
 def begin_task(data_collector: DataCollector, task_id, args) -> bool:
@@ -128,7 +140,14 @@ def begin_task(data_collector: DataCollector, task_id, args) -> bool:
 
     print()
     next_task = next_item(task_id)
+    
     finished = None
+
+    if args is not None:
+        finished = not args.exit_early
+        if finished is True:
+            finished = None
+
     while finished is None:
         try:
             finished = str2bool(check_exit(input('Continue to task {} [Y/n] (e for exit)? '.format(next_task))))
@@ -176,7 +195,7 @@ def get_user_uuid(args) -> str:
 
 def get_n(args) -> int:
     if args is None or not hasattr(args, 'limit_data'):
-        return 10
+        return None
     else:
         return args.limit_data
 
@@ -185,14 +204,14 @@ def loading_data(done_event: Event) -> None:
     with alive_bar(title='Processing data file...', total=None) as bar:
         while not done_event.is_set():
             bar()
-            sleep(0.1)
-            
+            sleep(0.1)       
 
 
 def check_exit(string: str) -> str:
     if string.lower() == 'e':
         sys.exit(0)
     return string
+
 
 def static_vars(**kwargs):
     def decorate(func):
