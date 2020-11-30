@@ -7,10 +7,20 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   DocuTrace.analysis
-   DocuTrace.gui
-   DocuTrace.utils
+   DocuTrace.Analysis
+   DocuTrace.Utils
+   DocuTrace.Gui
 
+Submodules
+----------
+
+DocuTrace.main module
+---------------------
+
+.. automodule:: DocuTrace.main
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
