@@ -89,7 +89,7 @@ def parse_args():
     args.add_argument('-f', '--filepath', help='Specifies the file name', required=True, type=str)
 
     secondary_args = parser.add_argument_group('Secondary parameters')
-    secondary_args.add_argument('-n', '--limit_data', help='Limits the number of displayed data points for tasks 2a, 2b, 3a, 3b, 4d, and 5.', type=int, required=False, default=10, const=20, nargs='?')
+    secondary_args.add_argument('-n', '--limit_data', help='Limits the number of displayed data points for tasks 2a, 2b, 3a, 3b, 4d, and 5.', type=int, required=False, default=None, const=20, nargs='?')
     secondary_args.add_argument('-v', '--verbose', type=int, required=False, default=30, nargs='?',
                                 const=20, help='Set the verbosity level, 20 for INFO, 10 for DEBUG. Default is 30: WARN')
     secondary_args.add_argument('-e', '--exit_early', type=str2bool, default=False, const=True,
