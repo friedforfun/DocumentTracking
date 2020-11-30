@@ -1,8 +1,10 @@
+from typing import OrderedDict
 import numpy as np
 from copy import deepcopy
 import pycountry
 import pycountry_convert
 from .Plots import Charts
+from DocuTrace.Utils.Exceptions import InvalidDocUUIDError
 
 def sort_dict_by_value(collection: dict, reverse: bool=True) -> list:
     """Sort a dictionary by the values inside, returns a list of keys
@@ -86,7 +88,7 @@ class ComputeData:
         return self.also_likes(document, visitor=visitor, sort_fn=top_n_sorted)
 
 
-    def also_likes(self, document: str, visitor: str=None, sort_fn=sort_dict_by_value) -> list:
+    def also_likes(self, document: str, visitor: str=None, sort_fn=sort_dict_by_value, **kwargs) -> list:
         """For a given document identify which other documents have been read by a reader of this document, when visitor is given exclude them from the resulting list.
 
         Args:
@@ -97,8 +99,11 @@ class ComputeData:
         Returns:
             List(str): A list of document ids, sorted by the provided function
         """
+        if document is None or '':
+            raise InvalidDocUUIDError('Document ID cannot be None')
+
         also_likes_dict = self.find_also_likes_counts(document, visitor=visitor)
-        return sort_fn(also_likes_dict)
+        return sort_fn(also_likes_dict,  **kwargs)
 
 
     def find_also_likes_counts(self, document: str, visitor:str =None) -> dict:
@@ -129,8 +134,7 @@ class ComputeData:
             [(numpy.array(str), numpy.array(str))]: [description]
         """
         # key error raised if document not found
-        # deep copy to prevent mutating self.document_readers
-        readers = np.array(deepcopy(self.document_readers.get(document)))
+        readers = np.array(self.document_readers.get(document))
 
         # Visitor should be excluded from result
         if visitor in readers:
@@ -168,8 +172,8 @@ class ComputeData:
                 self.browser_families.items(), key=lambda item: item[1], reverse=reverse)}
 
         if sort_reader_profiles:
-            self.reader_profiles = {k: v for k, v in sorted(
-                self.reader_profiles.items(), key=lambda item: item[1], reverse=reverse)}
+            self.reader_profiles = OrderedDict([(k, v) for k, v in sorted(
+                self.reader_profiles.items(), key=lambda item: item[1], reverse=reverse)])
 
 
     def top_reads(self, top_n=10, to_print=True) -> list:

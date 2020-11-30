@@ -1,7 +1,7 @@
 from functools import total_ordering
 from user_agents import parse as ua_parse
+from collections import OrderedDict
 
-from .AbstractClasses import Analyse
 from .FileRead import ParseFile
 from ..Utils.Logging import logger
 
@@ -68,7 +68,7 @@ class ReadingData:
         return "ReadingData(uuid:{}, Read time:{}, Number of reads:{})".format(self.uuid, self.read_time, self.reads)
 
     def __str__(self):
-        return "<uuid:{}, Read time:{}, Number of reads:{}>".format(self.uuid, self.read_time, self.reads)
+        return "uuid: {0} | Read time: {1:{width}} | Number of reads: {2:{r_width}}".format(self.uuid, self.read_time, self.reads, width=8, r_width=4)
 
     def __add__(self, other):
         if not self._is_valid_operand(other):
@@ -98,7 +98,7 @@ class DataCollector:
         self.countries = {}
         self.continents = {}
         self.browser_families = {}
-        self.reader_profiles = {}
+        self.reader_profiles = OrderedDict()
         self.document_readers = {}
         self.visitor_documents = {}
         self.counted = False
