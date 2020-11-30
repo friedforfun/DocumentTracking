@@ -5,12 +5,15 @@ import argparse
 import regex
 
 from DocuTrace.Utils.Logging import logger
-from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError, InvalidUserUUIDError
-
+from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError, InvalidUserUUIDError, InvalidDocUUIDError
 
 """Entertaining stack overflow post by Cecil Curry. Path validity checks use this. 
 https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta
 """
+
+MAX_TRIES = 3
+user_regex = regex.compile(r"^[\da-fA-F]{16}$")
+doc_regex = regex.compile(r"^\d{12}-[\da-zA-Z]{32}$")
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
@@ -102,6 +105,7 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+
 def validate_path(path: str) -> str:
     """Validate the path string
 
@@ -114,14 +118,14 @@ def validate_path(path: str) -> str:
     Returns:
         str: A valid path
     """
-    tries = 0
+    attempts = 1
     if not is_pathname_valid(path) or not path.lower().endswith('.json'):
-        while (not is_pathname_valid(path) or not path.lower().endswith('.json')) and tries < 4:
+        while (not is_pathname_valid(path) or not path.lower().endswith('.json')) and attempts < MAX_TRIES:
             logger.warning('Invalid path to file detected. Please check and try again. If all else fails try and absolute path.')
             path = input('Please enter a valid path: ')
-            tries += 1
+            attempts += 1
 
-        if tries > 4:
+        if attempts > attempts:
             raise InvalidPathError('Invalid path entered too many times.')
     return path
 
@@ -141,14 +145,14 @@ def validate_task(task: str) -> str:
     # Handle circular import
     from DocuTrace.Utils.Tasks import task_picker
 
-    tries = 0
+    attempts = 1
     if not task in task_picker.keys():
-        while not task in task_picker.keys() and tries < 4:
+        while not task in task_picker.keys() and attempts < MAX_TRIES:
             logger.warning('Invalid task identifier has been provided, please provide one of {}'.format(list(task_picker.keys())))
             task = input('Please enter a valid task id: ')
-            tries += 1
+            attempts += 1
         
-        if tries > 4:
+        if attempts > 4:
             raise InvalidTaskIDError('Invalid task id entered too many times')
     return task
 
@@ -164,14 +168,32 @@ def validate_user_uuid(user_uuid: str) -> str:
     Returns:
         str: A valid user UUID
     """
-    tries = 0
-    _regex = regex.compile(r"^[\da-fA-F]{16}$")
-    if not _regex.fullmatch(user_uuid):
-        while not _regex.fullmatch(user_uuid):
+    attempts = 1
+    if not user_regex.fullmatch(user_uuid):
+        while not user_regex.fullmatch(user_uuid) and attempts < MAX_TRIES:
+            if user_uuid is '' or None:
+                return None
+                
             logger.warning('Invalid user UUID detected. Please try again.')
             user_uuid = input('Please enter a valid user UUID: ')
-            tries += 1
+            attempts += 1
 
-        if tries > 4:
+        if attempts >= 4:
             raise InvalidUserUUIDError('Invalid user UUID entered too many times')
+
     return user_uuid.lower()
+
+
+def validate_doc_uuid(doc_uuid: str) -> str:
+
+    attempts = 1
+    if not doc_regex.fullmatch(doc_uuid):
+        while not doc_regex.fullmatch(doc_uuid) and attempts < MAX_TRIES:
+            logger.warning('Invalid doc UUID detected. Please try again.')
+            doc_uuid = input('Please enter a valid doc UUID: ')
+            attempts += 1
+        
+        if attempts >= 4:
+            raise InvalidDocUUIDError('Invalid doc UUID entered too many times')
+
+    return doc_uuid
