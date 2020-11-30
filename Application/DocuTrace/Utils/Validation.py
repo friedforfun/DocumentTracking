@@ -13,7 +13,7 @@ https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-pyt
 
 MAX_TRIES = 3
 user_regex = regex.compile(r"^[\da-fA-F]{16}$")
-doc_regex = regex.compile(r"^\d{12}-[\da-zA-Z]{32}$")
+doc_regex = regex.compile(r"^[\da-zA-Z]{12}-[\da-zA-Z]{30,36}$")
 
 # Sadly, Python fails to provide the following magic number for us.
 ERROR_INVALID_NAME = 123
