@@ -25,3 +25,11 @@ class InvalidUserUUIDError(InvalidArgument):
     def __init__(self, message='Invalid user UUID provided as an argument'):
         self.message = message
         super().__init__(self.message)
+
+
+class InvalidDocUUIDError(InvalidArgument):
+    """Raised when an invaid doc UUID has been entered.
+    """
+    def __init__(self, message='Invalid doc UUID provided as an argument'):
+        self.message = message
+        super().__init__(self.message)
