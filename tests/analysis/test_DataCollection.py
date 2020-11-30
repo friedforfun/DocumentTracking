@@ -6,7 +6,7 @@ mock_file_content = '{"visitor_uuid": "745409913574d4c6", "env_doc_id": "1307051
 json_dict = {
             "visitor_country": "MX",
              "visitor_uuid": "745409913574d4c6",
-             "env_doc_id": "130705172251-3a2a725b2bbd5aa3f2af810acf0aeabb",
+             "subject_doc_id": "130705172251-3a2a725b2bbd5aa3f2af810acf0aeabb",
              "event_readtime": 797,
              "visitor_useragent": "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B179 Safari/7534.48.3"}
 
