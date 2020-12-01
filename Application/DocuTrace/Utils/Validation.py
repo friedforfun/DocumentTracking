@@ -171,7 +171,7 @@ def validate_user_uuid(user_uuid: str) -> str:
     attempts = 1
     if not user_regex.fullmatch(user_uuid):
         while not user_regex.fullmatch(user_uuid) and attempts < MAX_TRIES:
-            if user_uuid is '' or None:
+            if user_uuid == '' or user_uuid is None:
                 return None
                 
             logger.warning('Invalid user UUID detected. Please try again.')
@@ -183,6 +183,8 @@ def validate_user_uuid(user_uuid: str) -> str:
 
     return user_uuid.lower()
 
+def check_doc_uuid(doc_uuid:str) -> str:
+    return doc_regex.fullmatch(doc_uuid)
 
 def validate_doc_uuid(doc_uuid: str) -> str:
 

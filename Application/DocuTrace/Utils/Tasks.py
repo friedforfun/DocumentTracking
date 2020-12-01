@@ -38,9 +38,16 @@ def task_2b(data_collector: DataCollector, args):
     logger.info(
         'Task 2b. Group the countries by continent, and generate a histogram of the continents of the viewers.')
     #! Render histogram inside gui
-    compute = ComputeData(data_collector)
-    compute.configure_figure(show_countries=False, show_browsers=False)
-    compute.histogram()
+    try:
+        doc_uuid = get_doc_uuid(args)
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        compute.construct_document_counts_figure(
+            doc_uuid, show_countries=False, n_countries=n)
+        gui.open(compute, doc_uuid=doc_uuid, n=n)
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 2a')
 
 
 def task_3a(data_collector: DataCollector, args):
