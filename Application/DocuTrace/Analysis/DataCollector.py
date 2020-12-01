@@ -153,7 +153,15 @@ class BrowserData:
         self.long_name = long_name
         self.count = count
 
-    def is_valid_operand(self, other):
+    def as_short_name(self) -> dict:
+        return {self.short_name: self.count}
+
+
+    def as_long_name(self) -> dict:
+        return {self.long_name: self.count}
+
+
+    def is_valid_operand(self, other) -> bool:
         return (hasattr(other, 'count') or type(other) == int)
 
 
