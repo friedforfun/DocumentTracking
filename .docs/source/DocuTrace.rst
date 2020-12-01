@@ -8,8 +8,8 @@ Subpackages
    :maxdepth: 4
 
    DocuTrace.Analysis
-   DocuTrace.Utils
    DocuTrace.Gui
+   DocuTrace.Utils
 
 Submodules
 ----------
