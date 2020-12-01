@@ -277,13 +277,10 @@ class ComputeData:
 
         continents = self.continents
         countries = self.countries
-        browsers = self.browser_families
         if n_continents is not None:
             continents = dict(list(self.continents.items())[:n_continents])
         if n_countries is not None:
             countries = dict(list(self.countries.items())[:n_countries])
-        if n_browsers is not None:
-            browsers = dict(list(self.browser_families.items())[:n_browsers])
         data = []
         titles = []
         x_labels = []
@@ -305,6 +302,8 @@ class ComputeData:
                 browsers = self.short_browsers()
             else:
                 browsers = self.long_browsers()
+            if n_browsers is not None:
+                browsers = dict(list(browsers.items())[:n_browsers])
 
             data.append(browsers)
             titles.append('Views from each browser')
