@@ -29,7 +29,7 @@ def task_2a(data_collector: DataCollector, args):
         n = get_n(args)
         compute = ComputeData(data_collector)
         compute.construct_document_counts_figure(doc_uuid, show_continents=False, n_countries=n)
-        gui.open(compute, doc_uuid=doc_uuid, n=n)
+        gui.open(compute, doc_uuid=doc_uuid, n=n, start_tab='Task 2a')
 
     except Exception as e:
         logger.exception('Exception encountered during Task 2a')
@@ -44,7 +44,7 @@ def task_2b(data_collector: DataCollector, args):
         compute = ComputeData(data_collector)
         compute.construct_document_counts_figure(
             doc_uuid, show_countries=False, n_countries=n)
-        gui.open(compute, doc_uuid=doc_uuid, n=n)
+        gui.open(compute, doc_uuid=doc_uuid, n=n, start_tab='Task 2b')
 
     except Exception as e:
         logger.exception('Exception encountered during Task 2a')
@@ -52,6 +52,14 @@ def task_2b(data_collector: DataCollector, args):
 
 def task_3a(data_collector: DataCollector, args):
     logger.info('Task 3a: Histogram of verbose views by browser.')
+    try:
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        compute.construct_counts_figure(show_continents=False, show_countries=False, n_browsers=n, clean_browser_names=False)
+        gui.open(compute, n=n, start_tab='Task 3a')
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 3a')
 
 
 def task_3b(data_collector: DataCollector, args):
@@ -59,17 +67,30 @@ def task_3b(data_collector: DataCollector, args):
         'Task 3b: Histogram of views by browser, with processed browser names.')
     #! Render histogram inside gui
     #! Supply n_browsers modification logic
-    compute = ComputeData(data_collector)
-    compute.configure_figure(show_countries=False, show_continents=False, n_browsers=20)
-    compute.histogram()
+    try:
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        compute.construct_counts_figure(show_continents=False, show_countries=False, n_browsers=n, clean_browser_names=True)
+        gui.open(compute, n=n, start_tab='Task 3b')
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 3b')
 
 def task_4(data_collector: DataCollector, args):
     logger.info('Task 4d: 10 most avid readers.')
-    compute = ComputeData(data_collector)
-    compute.sort(sort_countries=False, sort_continents=False, sort_browsers=False)
-    for i, profile in enumerate(compute.reader_profiles.values()):
-        if i < 10:
-            print('{:{width}} | {}'.format(i, profile, width=4))
+    try:
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        compute.sort(sort_countries=False,
+                    sort_continents=False, sort_browsers=False)
+        gui.open(compute, n=n, start_tab='Task 4')
+        # for i, profile in enumerate(compute.reader_profiles.values()):
+        #     if i < 10:
+        #         print('{:{width}} | {}'.format(i, profile, width=4))
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 4')
+    
 
 def task_5d(data_collector: DataCollector, args):
     logger.info('Task 5d: Also likes top n documents.')
@@ -80,8 +101,9 @@ def task_5d(data_collector: DataCollector, args):
         n = get_n(args)
         compute = ComputeData(data_collector)
         also_likes = compute.also_likes(doc_uuid, user_uuid, sort_fn=top_n_sorted, n=n)
-        for i, doc in enumerate(also_likes):
-            print(i+1, ' | ', doc)
+        gui.open(compute, doc_uuid, user_uuid, n, start_tab='Task 5d')
+        # for i, doc in enumerate(also_likes):
+        #     print(i+1, ' | ', doc)
 
     except Exception as e:
         logger.exception('Exception encountered during Task 5')
@@ -89,7 +111,18 @@ def task_5d(data_collector: DataCollector, args):
 def task_6(data_collector: DataCollector, args):
     logger.info('Task 6: Also likes graph, inside GUI.')
     #! Dont forget to catch key errors
-    user_uuid = get_user_uuid(args)
+    try:
+        doc_uuid = get_doc_uuid(args)
+        user_uuid = get_user_uuid(args)
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        also_likes = compute.also_likes(doc_uuid, user_uuid, sort_fn=top_n_sorted, n=n)
+        gui.open(compute, doc_uuid, user_uuid, n, start_tab='Task 6')
+        # for i, doc in enumerate(also_likes):
+        #     print(i+1, ' | ', doc)
+
+    except Exception as e:
+        logger.exception('Exception encountered during Task 5')
 
 
 def task_7(data_collector: DataCollector, args):
