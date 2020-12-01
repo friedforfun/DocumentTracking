@@ -1,10 +1,10 @@
 from typing import OrderedDict
 import numpy as np
-from copy import deepcopy
 import pycountry
 import pycountry_convert
 from .Plots import Charts
 from DocuTrace.Utils.Exceptions import InvalidDocUUIDError
+
 
 def sort_dict_by_value(collection: dict, reverse: bool=True) -> list:
     """Sort a dictionary by the values inside, returns a list of keys
@@ -65,7 +65,7 @@ def continent_name(alpha2_country:str) -> str:
     return cont
     
 class ComputeData:
-    def __init__(self, data_collector, fig_size=(5, 10)):
+    def __init__(self, data_collector, fig_size=(8, 6)):
         self.doc_locations = data_collector.doc_locations
         self.countries = data_collector.countries
         self.continents = data_collector.continents
@@ -75,6 +75,7 @@ class ComputeData:
         self.visitor_documents = data_collector.visitor_documents
         self.histo_config = None
         self.fig_size = fig_size
+
 
     def also_likes_top_10(self, document: str, visitor: str=None) -> list:
         """Get the top 10 also likes for the given parameters
@@ -121,6 +122,7 @@ class ComputeData:
         keys, counts = np.unique(relevant_docs, return_counts=True)
         return dict(zip(keys, counts))
 
+
     def find_relevant_docs(self, document: str, visitor: str=None) -> tuple:
         """Finds all documents relevant to the given document, and all readers except the given visitor
 
@@ -149,6 +151,7 @@ class ComputeData:
         relevant_docs = relevant_docs[relevant_docs != '']
         relevant_docs = relevant_docs[relevant_docs != document]
         return relevant_docs, readers
+
 
     def sort(self, reverse: bool=True, sort_countries: bool=True, sort_continents: bool=True, sort_browsers: bool=True, sort_reader_profiles: bool=True) -> None:
         """Sort each dict by its values
@@ -192,6 +195,32 @@ class ComputeData:
         if to_print:
             [print(reader) for reader in top_readers]
         return top_readers
+
+
+    def long_browsers(self) -> dict:
+        """Make dict with long browser names as keys
+
+        Returns:
+            dict: dict with long browser names as keys
+        """
+        from DocuTrace.Analysis.DataCollector import merge_dict
+        long_browser_names = {}
+        for browser in self.browser_families.values():
+            long_browser_names = merge_dict(long_browser_names, browser.as_long_name())
+        return long_browser_names
+
+
+    def short_browsers(self) -> dict:
+        """Make dict with short browser names as keys
+
+        Returns:
+            dict: dict with short browser names as keys
+        """
+        from DocuTrace.Analysis.DataCollector import merge_dict
+        short_browser_names = {}
+        for browser in self.browser_families.values():
+            short_browser_names = merge_dict(short_browser_names, browser.as_short_name())
+        return short_browser_names
 
 
     def histogram(self):
@@ -242,7 +271,7 @@ class ComputeData:
         return (data, titles, x_labels, y_labels)
 
 
-    def construct_counts_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
+    def construct_counts_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None, clean_browser_names=True):
         if sorted:
             self.sort(reverse)
 
@@ -272,6 +301,11 @@ class ComputeData:
             y_labels.append('Country')
 
         if show_browsers:
+            if clean_browser_names:
+                browsers = self.short_browsers()
+            else:
+                browsers = self.long_browsers()
+
             data.append(browsers)
             titles.append('Views from each browser')
             x_labels.append('')
