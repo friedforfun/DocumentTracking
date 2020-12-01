@@ -3,6 +3,8 @@ from matplotlib.figure import Figure
 from graphviz import Digraph
 import numpy as np
 
+from DocuTrace.Utils.Logging import logger, debug
+
 def get_edges(node_dict):
     """Produces a list of tuples representing the edges described in the node_dict
 
@@ -29,8 +31,13 @@ class Graphs:
     def __init__(self, compute_data):
         self.compute_data = compute_data
 
+    @debug
+    def save_view_graph(self, graph):
+        logger.debug(type(graph))
+        graph.view()
 
-    def also_likes_graph(self, document_id, visitor=None):
+    @debug
+    def also_likes_graph(self, document_id, visitor=None, n=None):
         """Generate the also likes graph
 
         Args:
@@ -42,9 +49,14 @@ class Graphs:
         """
         relevant_docs, readers = self.compute_data.find_relevant_docs(document_id, visitor)
 
-        graph = Digraph(name='Also likes')
+        graph = Digraph(name='Also likes', format='png')
         graph.attr('graph', ranksep='0.75')
         node_dict = {k: self.compute_data.visitor_documents.get(k, []) for k in readers}
+
+        if n is not None:
+            for key in node_dict:
+                node_dict[key] = node_dict[key][:n]
+
         edges = get_edges(node_dict)
 
         with graph.subgraph() as context:
@@ -61,15 +73,23 @@ class Graphs:
         with graph.subgraph() as documents:
             documents.attr('node', shape='circle', rank='same')
             documents.node(document_id[-4:], color='.3 .9 .7', style='filled')
+
+            # docs = []
+            # for doc in relevant_docs:
+            #     for value in node_dict.values():
+            #         if doc in value:
+            #             docs.append(doc)
+
             for doc in relevant_docs:
                 if doc != []:
-                    documents.node(doc[-4:])
+                    documents.node(doc[-4:]) 
         if visitor is not None:
             graph.edge(visitor[-4:], document_id[-4:])
             
         for edge in edges:
             graph.edge(*edge)
 
+        #logger.debug('Graph type: ', type(graph))
         return graph
 
 class Charts:
@@ -143,6 +163,6 @@ class Charts:
         for i, data_dict in enumerate(data):
             self.ax[i] = self.ax_bar_from_dict(self.ax[i], data_dict, titles[i], y_labels[i], x_labels[i])
 
-        self.fig.tight_layout()
+        #self.fig.tight_layout()
         return self.fig
 
