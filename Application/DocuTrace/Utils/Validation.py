@@ -183,8 +183,14 @@ def validate_user_uuid(user_uuid: str) -> str:
 
     return user_uuid.lower()
 
-def check_doc_uuid(doc_uuid:str) -> str:
+
+def check_user_uuid(user_uuid: str) -> bool:
+    return user_regex.fullmatch(user_uuid)
+
+
+def check_doc_uuid(doc_uuid:str) -> bool:
     return doc_regex.fullmatch(doc_uuid)
+
 
 def validate_doc_uuid(doc_uuid: str) -> str:
 
