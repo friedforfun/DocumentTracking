@@ -8,6 +8,7 @@ from DocuTrace.Utils.Validation import str2bool, validate_path, validate_task
 from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError
 from DocuTrace.Utils.Tasks import tasks
 
+
 def main():
     run(parse_args())
 

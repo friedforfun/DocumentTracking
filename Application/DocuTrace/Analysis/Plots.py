@@ -2,8 +2,11 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from graphviz import Digraph, Source
 import numpy as np
+from decouple import config
 
 from DocuTrace.Utils.Logging import logger, debug
+
+WORK_DIR = config('WORK_DIR')
 
 def get_edges(node_dict):
     """Produces a list of tuples representing the edges described in the node_dict
@@ -28,17 +31,28 @@ class Graphs:
     Args:
         compute_data (ComputeData): Instance of a ComputeData object
     """
-    def __init__(self, compute_data):
+    def __init__(self, compute_data, filename):
         self.compute_data = compute_data
+        self.filename = filename
 
-    #@debug
+
     def save_view_graph(self, graph):
-        logger.debug(type(graph))
-        path = graph.save()
+        logger.debug('Graph file format: {}'.format(graph.format))
+        #path = graph.save(filename=self.filename)
+        path = graph.render(filename=self.filename, format=graph.format, cleanup=True, directory=WORK_DIR)
         logger.info('Graph saved at: {}'.format(path))
         return path
 
+
     def last_4_chars(self, doc_list):
+        """Helper method to truncate a list of strings to only 4 characters
+
+        Args:
+            doc_list (list): list of strings to be truncated
+
+        Returns:
+            list: list with 4 element string slices
+        """
         new_list = []
         for doc in doc_list:
             new_list.append(doc[-4:])

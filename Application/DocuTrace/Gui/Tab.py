@@ -1,7 +1,6 @@
 from tkinter import ttk
 import tkinter as tk
 import os
-from decouple import config
 from PIL import ImageTk, Image
 import matplotlib
 matplotlib.use('TkAgg')
@@ -13,7 +12,6 @@ from DocuTrace.Utils.Logging import debug, logger
 from DocuTrace.Gui.Tasks import *
 from DocuTrace.Utils.Validation import check_doc_uuid, check_user_uuid
 
-WORK_DIR = config('WORK_DIR')
 
 tab_dict = {
     'Task 2a': task2a_widgets,
@@ -50,13 +48,13 @@ class Controls(ttk.Frame):
             row (int, optional): The row to place these gui elements. Defaults to 0.
             inlcude_num (bool, optional): Inlcude the n input fields. Defaults to True.
         """
-        self.label = ttk.Label(self, text='Document UUID: ').grid(row=row, column=0, padx=15, pady=0)
-        self.input = ttk.Entry(self, textvariable=self.doc_uuid).grid(row=row, column=1, padx=10, pady=0)
-        self.button = ttk.Button(self, text='Show', command=btn_fn).grid(row=row, column=4, padx=10, pady=0)
+        self.label = ttk.Label(self, text='Document UUID: ').grid(row=row, column=0, padx=15, pady=5)
+        self.input = ttk.Entry(self, textvariable=self.doc_uuid).grid(row=row, column=1, padx=10, pady=5)
+        self.button = ttk.Button(self, text='Show', command=btn_fn).grid(row=row, column=4, padx=10, pady=5)
 
         if inlcude_num:
-            self.label_n = ttk.Label(self, text='Number to display: ').grid(row=row, column=2, padx=15, pady=0)
-            self.input_n = ttk.Entry(self, textvariable=self.n, width=5).grid(row=row, column=3, padx=15, pady=0)
+            self.label_n = ttk.Label(self, text='Number to display: ').grid(row=row, column=2, padx=15, pady=5)
+            self.input_n = ttk.Entry(self, textvariable=self.n, width=5).grid(row=row, column=3, padx=15, pady=5)
 
 
     def n_only(self, btn_fn, row: int=1) -> None:
@@ -66,9 +64,9 @@ class Controls(ttk.Frame):
             btn_fn (Any -> Any): Function to run on button press
             row (int, optional): Row to place gui elements on. Defaults to 0.
         """
-        self.label_n = ttk.Label(self, text='Number to display: ').grid(row=row, column=0, padx=15, pady=0)
-        self.input_n = ttk.Entry(self, textvariable=self.n, width=5).grid(row=row, column=1, padx=15, pady=0)
-        self.button = ttk.Button(self, text='Show', command=btn_fn).grid(row=row, column=2, padx=10, pady=0)
+        self.label_n = ttk.Label(self, text='Number to display: ').grid(row=row, column=0, padx=15, pady=5)
+        self.input_n = ttk.Entry(self, textvariable=self.n, width=5).grid(row=row, column=1, padx=15, pady=5)
+        self.button = ttk.Button(self, text='Show', command=btn_fn).grid(row=row, column=2, padx=10, pady=5)
 
 
     def user_elements(self, row: int=1) -> None:
@@ -105,7 +103,7 @@ class Content(ttk.Frame):
 
         self.plot_canvas = FigureCanvasTkAgg(fig, self)
         self.plot_canvas.draw()
-        self.plot_canvas.get_tk_widget().grid(column=0, row=3, columnspan=4, rowspan=4, pady=40, sticky='NSEW')
+        self.plot_canvas.get_tk_widget().grid(column=0, row=3, columnspan=4, rowspan=4, pady=0, sticky='NSEW')
         #.pack(side=tk.TOP, fill=tk.BOTH, expand=True)  #
         self.plot_canvas.get_tk_widget()
 
@@ -116,7 +114,7 @@ class Content(ttk.Frame):
         Args:
             string_list (list): List of strings
         """
-        self.info_label = ttk.Label(self, text='\n'.join(string_list)).grid(column=0, row=2, columnspan=4,pady=40, rowspan=4,  sticky='NSEW')
+        self.info_label = ttk.Label(self, text='\n'.join(string_list)).grid(column=0, row=2, columnspan=4,pady=0, rowspan=4,  sticky='NSEW')
         #.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         #.grid(row=row, column=0, columnspan=6, rowspan=8, sticky=(tk.N, tk.S, tk.E, tk.W))
 
@@ -132,7 +130,7 @@ class Content(ttk.Frame):
         logger.info('Path to image: {}'.format(path))
         load = Image.open(path)
         self.im_render = ImageTk.PhotoImage(load)
-        self.image_label = ttk.Label(self, image=self.im_render).grid(column=0, row=2, columnspan=4, pady=40, rowspan=4,  sticky='NSEW')
+        self.image_label = ttk.Label(self, image=self.im_render).grid(column=0, row=2, columnspan=4, pady=0, rowspan=4,  sticky='NSEW')
         #.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         #.grid(column=0, row=2, columnspan=6, rowspan=8,  sticky=(tk.N, tk.S, tk.E, tk.W))
 
@@ -167,9 +165,9 @@ class Tab(ttk.Frame):
         self.n = tk.IntVar(self.master, value=n)
 
         self.controls = Controls(self, self.doc_uuid, self.user_uuid, self.n)
-        self.controls.grid(row=0, rowspan=2, columnspan=10, pady=40, sticky=(tk.N, tk.W))
+        self.controls.grid(row=0, rowspan=2, columnspan=10, padx=10, pady=5, sticky=(tk.N, tk.W))
         self.content = Content(self, self.doc_uuid, self.user_uuid, self.n)
-        self.content.grid(row=1, rowspan=10, columnspan=10, sticky=(tk.N, tk.E, tk.S, tk.W))
+        self.content.grid(row=1, rowspan=10, columnspan=10, pady=90, sticky=(tk.N, tk.E, tk.S, tk.W))
 
         self.compute_data = compute_data
         self.widget_fn = widget_fn
@@ -333,9 +331,7 @@ class Tab(ttk.Frame):
         n = self.get_n()
         #directory =WORK_DIR +
         #logger.info(directory)
-        graph = Graphs(self.compute_data)
+        graph = Graphs(self.compute_data, 'also_likes')
         self.digraph = graph.also_likes_graph(doc_uuid, user_uuid, n)
-        logger.debug('In display: {}'.format(type(self.digraph)))
         path = graph.save_view_graph(self.digraph)
-        path = path + '.gv.png'
         self.content.display_graph(path)
