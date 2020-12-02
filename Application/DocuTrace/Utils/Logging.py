@@ -16,6 +16,7 @@ def debug(func):
     def inner(*args, **kwargs):
         from DocuTrace.Utils.Logging import logger, logging
         logger.setLevel(logging.DEBUG)
-        func(*args, **kwargs)
-        logger.setLevel(logging.INFO)
+        return func(*args, **kwargs)
+        
+    logger.setLevel(logging.INFO)
     return inner

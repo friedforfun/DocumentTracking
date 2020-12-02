@@ -240,7 +240,7 @@ class ComputeData:
         #! Raises KeyError
         doc_data = self.doc_locations.get(doc_uuid, None)
         if doc_data is None:
-            raise ValueError('Doc UUID not found')
+            raise InvalidDocUUIDError('Document ID cannot be None')
 
         continents = doc_data.continents
         countries = doc_data.countries

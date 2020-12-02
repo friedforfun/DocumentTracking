@@ -106,7 +106,7 @@ def task_5d(data_collector: DataCollector, args):
         #     print(i+1, ' | ', doc)
 
     except Exception as e:
-        logger.exception('Exception encountered during Task 5')
+        logger.exception('Exception encountered during Task 5d')
 
 def task_6(data_collector: DataCollector, args):
     logger.info('Task 6: Also likes graph, inside GUI.')
@@ -122,12 +122,15 @@ def task_6(data_collector: DataCollector, args):
         #     print(i+1, ' | ', doc)
 
     except Exception as e:
-        logger.exception('Exception encountered during Task 5')
+        logger.exception('Exception encountered during Task 6')
 
 
 def task_7(data_collector: DataCollector, args):
     logger.info('Task 7: Open the GUI')
-    gui.open(ComputeData(data_collector))
+    try:
+        gui.open(ComputeData(data_collector))
+    except:
+        logger.exception('Exception encountered during Task 7')
 
 def task_8(data_collector: DataCollector, args):
     logger.info('Task 8: Command line, This is it!')

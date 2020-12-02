@@ -140,7 +140,7 @@ class JsonProcessContextManager():
         Args:
             chunk (list(str)): A chunk produced by the stream_file_chunks function
         """
-        logger.debug("Enqueuing a chunk | Chunk lines: {}".format(len(chunk)))
+        #logger.debug("Enqueuing a chunk | Chunk lines: {}".format(len(chunk)))
         self.queue.put(chunk)
 
     def __enter__(self):
@@ -234,7 +234,7 @@ class JsonParseProcess(Process):
                 
                 self.queue.task_done()
                 duration = time.time() - start_time
-                logger.debug('Process <{}>... one chunk processed. Duration: {} | Chunk lines: {}'.format(self.t_name, duration, len(chunk)))
+                #logger.debug('Process <{}>... one chunk processed. Duration: {} | Chunk lines: {}'.format(self.t_name, duration, len(chunk)))
             
             self.queue.task_done()
             logger.debug('Process <{}>... Terminating'.format(self.t_name))
