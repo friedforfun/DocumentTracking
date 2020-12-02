@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
-from graphviz import Digraph
+from graphviz import Digraph, Source
 import numpy as np
 
 from DocuTrace.Utils.Logging import logger, debug
@@ -31,12 +31,20 @@ class Graphs:
     def __init__(self, compute_data):
         self.compute_data = compute_data
 
-    @debug
+    #@debug
     def save_view_graph(self, graph):
         logger.debug(type(graph))
-        graph.view()
+        path = graph.save()
+        logger.info('Graph saved at: {}'.format(path))
+        return path
 
-    @debug
+    def last_4_chars(self, doc_list):
+        new_list = []
+        for doc in doc_list:
+            new_list.append(doc[-4:])
+        return new_list
+
+    #@debug
     def also_likes_graph(self, document_id, visitor=None, n=None):
         """Generate the also likes graph
 
@@ -47,50 +55,71 @@ class Graphs:
         Returns:
             graphviz.Digraph: A digraph showing the relationship between the given docuement and other documents by readers
         """
-        relevant_docs, readers = self.compute_data.find_relevant_docs(document_id, visitor)
+        from DocuTrace.Analysis.ComputeData import top_n_sorted
 
-        graph = Digraph(name='Also likes', format='png')
-        graph.attr('graph', ranksep='0.75')
-        node_dict = {k: self.compute_data.visitor_documents.get(k, []) for k in readers}
+        _, reader_list = self.compute_data.find_relevant_docs(document_id, visitor)
+        reader_list = reader_list.tolist()
+        relevant_docs = self.compute_data.also_likes(document_id, visitor, sort_fn=top_n_sorted, n=n)
 
-        if n is not None:
-            for key in node_dict:
-                node_dict[key] = node_dict[key][:n]
+        logger.debug('Length of relevant docs: {}'.format(len(relevant_docs)))
 
+        self.graph = Digraph(name='Also likes', filename='Also likes', format='png')
+        self.graph.attr('graph', ranksep='0.75')
+
+        # Identify connections between nodes and docs
+        node_dict = {k: self.compute_data.visitor_documents.get(k, []) for k in reader_list}
+
+        # Remove duplicate entries in node_dict
+        for node in node_dict:
+            node_dict[node] = np.unique(node_dict[node]).tolist()
+
+        # Get all edges from node_dict
         edges = get_edges(node_dict)
 
-        with graph.subgraph() as context:
+
+        # Remove edges that point to docs not in relevant docs
+        clean_edges = []
+        relevant_docs.append(document_id)
+        for edge in edges:
+            if edge[1] in self.last_4_chars(relevant_docs):
+                clean_edges.append(edge)
+        edges = clean_edges
+        relevant_docs.remove(document_id)
+
+        # Build context subgraph
+        with self.graph.subgraph() as context:
             context.attr('node', shape='plaintext', fontsize='16')
             context.edge('Readers', 'Documents')
 
-        with graph.subgraph() as readers:
+
+        # Add reader nodes
+        with self.graph.subgraph() as readers:
             readers.attr('node', shape='box', rank='same')
             if visitor is not None:
                 readers.node(visitor[-4:], color='.3 .9 .7', style='filled')
+
             for node in node_dict:
                 readers.node(node[-4:])
 
-        with graph.subgraph() as documents:
+        
+        # Add document nodes
+        with self.graph.subgraph() as documents:
             documents.attr('node', shape='circle', rank='same')
             documents.node(document_id[-4:], color='.3 .9 .7', style='filled')
-
-            # docs = []
-            # for doc in relevant_docs:
-            #     for value in node_dict.values():
-            #         if doc in value:
-            #             docs.append(doc)
 
             for doc in relevant_docs:
                 if doc != []:
                     documents.node(doc[-4:]) 
-        if visitor is not None:
-            graph.edge(visitor[-4:], document_id[-4:])
-            
-        for edge in edges:
-            graph.edge(*edge)
 
-        #logger.debug('Graph type: ', type(graph))
-        return graph
+        # Make an edge between the visitor and the document
+        if visitor is not None:
+            self.graph.edge(visitor[-4:], document_id[-4:])
+            
+        # Add all remaining edges
+        for edge in edges:
+            self.graph.edge(*edge)
+
+        return self.graph
 
 class Charts:
     """Class with functions to aid plotting charts
