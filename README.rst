@@ -20,6 +20,7 @@ The **DocuTrace** module has the following dependencies:
 - graphviz==0.15
 - regex==2020.11.13
 - alive-progress==1.6.1
+- python-decouple=3.3
 
 **Test** requirements:
 
@@ -48,11 +49,16 @@ Command line usage
 ==================
 Ensure your current shell is in the correct environment.
 
-This application can either be run directly on the python entry point:
+The best way to start the application is via the provided shell script within the Application directory (needs executable permissions):
+``$ ./docutrace -h``
+
+Alternatively you must create a .env file and specify the full path to the location of your current shell (the shell script will automate this):
+``WORK_DIR=<path to shell>``
+
+Now the application can be run directly on the python entry point:
 ``<Path to repository>/Application$ python DocuTrace/main.py -h``
 
-Alternatively a shell script has been provided within the Application directory (needs executable permissions):
-``$ ./docutrace -h``
+
 
 
 
