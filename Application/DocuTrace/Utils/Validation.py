@@ -185,15 +185,40 @@ def validate_user_uuid(user_uuid: str) -> str:
 
 
 def check_user_uuid(user_uuid: str) -> bool:
+    """Checks if the user uuid is valid
+
+    Args:
+        user_uuid (str): a user uuid
+
+    Returns:
+        bool: True if the uuid matches the regex, else false
+    """
     return user_regex.fullmatch(user_uuid)
 
 
 def check_doc_uuid(doc_uuid:str) -> bool:
+    """Checks if the doc uuid is valid
+
+    Args:
+        doc_uuid (str): a doc uuid
+
+    Returns:
+        bool: True if the uuid matches the regex, else false
+    """
     return doc_regex.fullmatch(doc_uuid)
 
 
 def validate_doc_uuid(doc_uuid: str) -> str:
+    """Validate a doc uuid string
 
+    Args:
+        doc_uuid (str): A doc uuid.
+    Raises:
+        InvalidDocUUIDError: Invalid doc UUID id entered too many times
+
+    Returns:
+        str: A valid doc UUID
+    """
     attempts = 1
     if not doc_regex.fullmatch(doc_uuid):
         while not doc_regex.fullmatch(doc_uuid) and attempts < MAX_TRIES:

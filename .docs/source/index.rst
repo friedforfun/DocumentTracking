@@ -6,7 +6,7 @@
 Welcome to DocuTrace's documentation!
 =====================================
 
-   readme
+.. include:: ../../README.rst
 
 .. toctree::
    :maxdepth: 4

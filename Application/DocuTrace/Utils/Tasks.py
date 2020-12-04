@@ -13,6 +13,8 @@ from DocuTrace.Utils.Validation import validate_user_uuid, str2bool, validate_ta
 from DocuTrace.Utils.Exceptions import InvalidTaskIDError
 from DocuTrace.Gui import main as gui
 
+"""Provides functions to begin each task
+"""
 
 def task_1(data_collector: DataCollector, args):
     logger.info(
@@ -158,17 +160,38 @@ task_picker['7'] = task_7
 task_picker['8'] = task_8
 
 
-def next_item(key) -> str:
+def next_item(key, task_dict=task_picker) -> str:
+    """Get the item after the key given to the function
+
+    Args:
+        key (str): A valid key from task_dict
+
+    Returns:
+        str: The next key, or if the final key is given return the first key.
+    """
     try:
-        return list(task_picker)[list(task_picker.keys()).index(key) + 1]
+        return list(task_dict)[list(task_dict.keys()).index(key) + 1]
     except IndexError as e:
         return '1'
 
 def raise_invalid_task(*args, **kwargs):
+    """Function that raises error, used when accessing the task_picker dict
+
+    Raises:
+        InvalidTaskIDError: Raised when the task is invalid
+    """
     raise InvalidTaskIDError
 
 
 def tasks(data_collector: DataCollector, thread: Thread, task_id: str, args) -> None:
+    """Display a loading bar for the data processing, once processing is complete start the task based on the ArgParse parameters.
+
+    Args:
+        data_collector (DataCollector): Instance of the DataCollector class used to process the file.
+        thread (Thread): The thread currently processing the file
+        task_id (str): The validated identifier of the task to begin running
+        args (Namespace): The CLI arguments
+    """
     finished = False
     loading_event = Event()
     loading_bar = Thread(target=loading_data, args=(loading_event,), daemon=True)
@@ -184,7 +207,17 @@ def tasks(data_collector: DataCollector, thread: Thread, task_id: str, args) -> 
             finished, task_id, args = begin_task(data_collector, task_id, args)
 
 
-def begin_task(data_collector: DataCollector, task_id, args) -> bool:
+def begin_task(data_collector: DataCollector, task_id: str, args) -> bool:
+    """Function to handle task selection and the flow of the program
+
+    Args:
+        data_collector (DataCollector): Instance of the DataCollector class used to process the file.
+        task_id (str): The validated identifier of the task to begin running
+        args (Namespace): The CLI arguments
+
+    Returns:
+        bool: Indicates if the program is complete
+    """
     run_task = task_picker.get(task_id, raise_invalid_task)
     print('------------------ Task: {} ------------------'.format(task_id))
     run_task(data_collector, args)
@@ -223,6 +256,14 @@ def begin_task(data_collector: DataCollector, task_id, args) -> bool:
 
 #@debug
 def get_doc_uuid(args) -> str:
+    """Helper function to get the document UUID
+
+    Args:
+        args (Namespace): The CLI arguments
+
+    Returns:
+        str: Document UUID
+    """
     if args is None or not hasattr(args, 'doc_uuid'):
         doc_uuid = input('Doc UUID must be specified: ')
     else:
@@ -238,6 +279,14 @@ def get_doc_uuid(args) -> str:
 
 
 def get_user_uuid(args) -> str:
+    """Helper function to get the user UUID
+
+    Args:
+        args (Namespace): The CLI arguments
+
+    Returns:
+        str: User UUID
+    """
     if args is None or not hasattr(args, 'user_uuid'):
         user_uuid = input('User UUID: ')
     else:
@@ -249,6 +298,14 @@ def get_user_uuid(args) -> str:
 
 
 def get_n(args) -> int:
+    """Helper function to get the n parameter
+
+    Args:
+        args (Namespace): The CLI arguments
+
+    Returns:
+        int: n
+    """
     if args is None or not hasattr(args, 'limit_data'):
         return None
     else:
@@ -256,6 +313,11 @@ def get_n(args) -> int:
 
 
 def loading_data(done_event: Event) -> None:
+    """Display a loading bar while the data is being loaded
+
+    Args:
+        done_event (Event): An event that gets set when the loading bar finishes
+    """
     with alive_bar(title='Processing data file...', total=None) as bar:
         while not done_event.is_set():
             bar()
@@ -263,40 +325,16 @@ def loading_data(done_event: Event) -> None:
 
 
 def check_exit(string: str) -> str:
+    """Verify if the exit flag has been entered by the user
+
+    Args:
+        string (str): String entered by the user
+
+    Returns:
+        str: returns the unmodified string
+    """
     if string.lower() == 'e':
         sys.exit(0)
     return string
 
-
-def static_vars(**kwargs):
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-
-    return decorate
-
-
-@static_vars(step_id=0)
-def next_step(additional_info='', step_id=0):
-    step_names = {
-        1: '1',
-        2: '2'
-    }
-
-    if step_id != 0:
-        next_step.step_id = step_id
-    else:
-        next_step.step_id += 1
-
-    if next_step.step_id not in step_names.keys():
-        raise Exception('Step ID {} is out of total steps number '.format(
-            next_step.step_id, str(len(step_names))))
-
-    step_info_template = '[Step {}/{}] {}'
-    step_name = step_names[next_step.step_id] + \
-        (' ({})'.format(additional_info) if additional_info else '')
-    step_info_template = step_info_template.format(
-        next_step.step_id, len(step_names), step_name)
-    print(step_info_template)
 

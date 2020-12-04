@@ -33,7 +33,15 @@ def pass_fn(tab) -> None:
     pass
 
 class Controls(ttk.Frame):
-    def __init__(self, parent, doc_uuid, user_uuid, n):
+    """A Frame to manage the controls of each tab
+
+    Args:
+        parent (ttk.Frame): 
+        doc_uuid (str): The uuid of a document
+        user_uuid (str): The uuid of a user
+        n (int): A number of elements to display, depends on context
+    """
+    def __init__(self, parent, doc_uuid: str, user_uuid: str, n: int):
         super().__init__(parent, borderwidth=5, relief="sunken", width=500, height=80)
         self.doc_uuid = doc_uuid
         self.user_uuid = user_uuid
@@ -80,6 +88,14 @@ class Controls(ttk.Frame):
 
 
 class Content(ttk.Frame):
+    """A Frame to manage the content of each tab
+
+    Args:
+        parent (ttk.Frame): 
+        doc_uuid (str): The uuid of a document
+        user_uuid (str): The uuid of a user
+        n (int): A number of elements to display, depends on context
+    """
     def __init__(self, parent, doc_uuid, user_uuid, n):
         super().__init__(parent)
         self.parent = parent
