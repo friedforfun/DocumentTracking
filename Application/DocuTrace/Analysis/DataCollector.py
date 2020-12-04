@@ -20,7 +20,6 @@ def merge_dict(own: dict, other: dict) -> dict:
             own[element] = other[element]
         else:
             own[element] += other[element]
-    logger.debug('DEBUG: {}'.format(own))
     return own
 
 @total_ordering

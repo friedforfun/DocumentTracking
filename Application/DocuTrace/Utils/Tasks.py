@@ -8,7 +8,7 @@ from alive_progress import alive_bar
 
 from DocuTrace.Analysis.DataCollector import DataCollector
 from DocuTrace.Analysis.ComputeData import ComputeData, top_n_sorted
-from DocuTrace.Utils.Logging import logger
+from DocuTrace.Utils.Logging import debug, logger
 from DocuTrace.Utils.Validation import validate_user_uuid, str2bool, validate_task, validate_doc_uuid
 from DocuTrace.Utils.Exceptions import InvalidTaskIDError
 from DocuTrace.Gui import main as gui
@@ -128,8 +128,17 @@ def task_6(data_collector: DataCollector, args):
 def task_7(data_collector: DataCollector, args):
     logger.info('Task 7: Open the GUI')
     try:
-        gui.open(ComputeData(data_collector))
-    except:
+        doc_uuid = get_doc_uuid(args)
+        user_uuid = get_user_uuid(args)
+        n = get_n(args)
+        compute = ComputeData(data_collector)
+        also_likes = compute.also_likes(
+            doc_uuid, user_uuid, sort_fn=top_n_sorted, n=n)
+        gui.open(compute, doc_uuid, user_uuid, n, start_tab='Task 6')
+        # for i, doc in enumerate(also_likes):
+        #     print(i+1, ' | ', doc)
+
+    except Exception as e:
         logger.exception('Exception encountered during Task 7')
 
 def task_8(data_collector: DataCollector, args):
@@ -212,12 +221,15 @@ def begin_task(data_collector: DataCollector, task_id, args) -> bool:
     args = None
     return not finished, next_task, args
 
-
+#@debug
 def get_doc_uuid(args) -> str:
     if args is None or not hasattr(args, 'doc_uuid'):
-        doc_uuid = input('Doc UUID: ')
+        doc_uuid = input('Doc UUID must be specified: ')
     else:
-        doc_uuid = args.doc_uuid
+        if args.doc_uuid is None:
+            doc_uuid = input('Doc UUID must be specified: ')
+        else:
+            doc_uuid = args.doc_uuid
 
 
     doc_uuid = validate_doc_uuid(doc_uuid)

@@ -38,7 +38,7 @@ class Controls(ttk.Frame):
         self.doc_uuid = doc_uuid
         self.user_uuid = user_uuid
         self.n = n
-        logger.info('Info constructor')
+
 
     def doc_elements(self, btn_fn, row: int=1, inlcude_num: bool=True) -> None:
         """Create the elements for doc uuid input and possibly number to display.
@@ -326,6 +326,8 @@ class Tab(ttk.Frame):
 
 
     def display_also_likes_graph(self):
+        """Display a graph showing also like data
+        """
         doc_uuid = self.check_doc_uuid()
         user_uuid = self.check_user_uuid()
         n = self.get_n()
