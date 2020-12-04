@@ -1,16 +1,14 @@
 from functools import total_ordering
 from user_agents import parse as ua_parse
-from threading import BoundedSemaphore
+from collections import OrderedDict
 
-from .AbstractClasses import Analyse
 from .FileRead import ParseFile
-from .Plots import Charts
-from ..Utils.Logging import logger
+from ..Utils.Logging import logger, debug
 
 from .ComputeData import continent_name
 
 
-def merge_dict(own, other):
+def merge_dict(own: dict, other: dict) -> dict:
     """Merge other dict with self
 
     Args:
@@ -26,7 +24,7 @@ def merge_dict(own, other):
 
 @total_ordering
 class ReadingData:
-    """Stores user uuid, reading time and number of reads.
+    """Stores user uuid, reading time and number of reads. Implements comparison, addition, and printing operators.
 
     Args:
         uuid (str): User uuid
@@ -38,7 +36,7 @@ class ReadingData:
         self.read_time = read_time
         self.reads = reads
 
-    def new_read(self, read_time):
+    def new_read(self, read_time: int) -> None:
         """Used to update the total reading time of this user.
 
         Args:
@@ -47,11 +45,19 @@ class ReadingData:
         self.read_time += read_time
         self.reads += 1
 
-    def _is_valid_operand(self, other):
+    def is_valid_operand(self, other) -> bool:
+        """Check if other is a valid operand
+
+        Args:
+            other (ReadingData | int): Other instance of this class or an integer
+
+        Returns:
+            bool: True if other is a valid operand
+        """
         return(hasattr(other, "read_time") or type(other) == int)
 
     def __eq__(self, other):
-        if not self._is_valid_operand(other):
+        if not self.is_valid_operand(other):
             return NotImplemented
         if type(other) == int:
             return self.read_time == other
@@ -59,7 +65,7 @@ class ReadingData:
             return self.read_time == other.read_time
 
     def __lt__(self, other):
-        if not self._is_valid_operand(other):
+        if not self.is_valid_operand(other):
             return NotImplemented
         if type(other) == int:
             return self.read_time < other
@@ -67,28 +73,154 @@ class ReadingData:
             return self.read_time < other.read_time
 
     def __repr__(self):
-        return "ReadingData(uuid:%s, Read time:%s, Number of reads:%s)" % (self.uuid, self.read_time, self.reads)
+        return "ReadingData(uuid:{}, Read time:{}, Number of reads:{})".format(self.uuid, self.read_time, self.reads)
 
     def __str__(self):
-        return "<uuid:%s, Read time:%s, Number of reads:%s>\n" % (self.uuid, self.read_time, self.reads)
+        return "uuid: {0} | Read time: {1:{width}} | Number of reads: {2:{r_width}}".format(self.uuid, self.read_time, self.reads, width=8, r_width=4)
+
+    def __add__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+
+        if self.uuid != other.uuid:
+            return NotImplemented
+
+        total_read_time = self.read_time + other.read_time
+        total_reads = self.reads + other.reads
+        return ReadingData(self.uuid, total_read_time, total_reads)
 
 
+class DocLocation:
+    def __init__(self, uuid, countries=None, continents=None):
+        self.uuid = uuid
 
-class DataCollector(Analyse):
+        if countries is None:
+            self.countries = {}
+        else:
+            self.countries = countries
 
-    def __init__(self, path=None, fig_dimensions=(15, 10), count_browser=True, count_country=True, count_continent=True, build_reader_profiles=True, collect_doc_data=True):
+        if continents is None:
+            self.continents = {}
+        else:
+            self.continents = continents
+
+
+    def add_location(self, location):
+
+        if self.countries.get(location, None) is None:
+            self.countries[location] = 1
+        else:
+            self.countries[location] += 1
+
+        continent_n = continent_name(location)
+        if self.continents.get(continent_n, None) is None:
+            self.continents[continent_n] = 1
+        else:
+            self.continents[continent_n] += 1
+        return DocLocation(self.uuid, self.countries, self.continents)
+
+
+    def is_valid_operand(self, other):
+        """Check if other is a valid operand
+
+        Args:
+            other (DocLocation): Other instance of this class
+
+        Returns:
+            bool: True if other is a valid operand
+        """
+        return (hasattr(other, 'uuid') and hasattr(other, 'countries') and hasattr(other, 'continents'))
+
+    #@debug
+    def __add__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+
+        if self.uuid != other.uuid:
+            return NotImplemented
+
+        new_countries = merge_dict(self.countries, other.countries)
+        new_continents = merge_dict(self.continents, other.continents)
+        logger.debug('{}'.format(new_countries))
+        return DocLocation(self.uuid, new_countries, new_continents)
+        
+
+@total_ordering
+class BrowserData:
+    def __init__(self, short_name, long_name, count=1):
+        self.short_name = short_name
+        self.long_name = long_name
+        self.count = count
+
+    def as_short_name(self) -> dict:
+        return {self.short_name: self.count}
+
+
+    def as_long_name(self) -> dict:
+        return {self.long_name: self.count}
+
+
+    def is_valid_operand(self, other) -> bool:
+        return (hasattr(other, 'count') or type(other) == int)
+
+
+    def __eq__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.count == other
+        return self.count == other.count
+
+
+    def __lt__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+        if type(other) == int:
+            return self.count < other
+        return self.count < other.count
+
+
+    def __add__(self, other):
+        if not self.is_valid_operand(other):
+            return NotImplemented
+
+        if self.short_name != other.short_name:
+            return NotImplemented
+
+        if type(other) == int:
+            new_count = self.count + other
+        else:
+            new_count = self.count + other.count
+
+        return BrowserData(self.short_name, self.long_name, new_count)
+
+
+class DataCollector:
+    """Handles collection and orgnaisation of data
+
+    Args:
+        path (str, optional): Path to the file being read. Defaults to None.
+        count_browser (bool, optional): Count browser data? Defaults to True.
+        count_country (bool, optional): Count country data? Defaults to True.
+        count_continent (bool, optional): Count continent data? Defaults to True.
+        build_reader_profiles (bool, optional): Build reader profiles? Defaults to True.
+        collect_doc_data (bool, optional): Collect document-reader relationships? Defaults to True.
+    """
+    def __init__(self, path: str=None, count_doc_locations: bool=True, count_browser: bool=True, count_country: bool=True, count_continent: bool=True, build_reader_profiles: bool=True, collect_doc_data: bool=True):
         self.path = path
         self.countries = {}
+        self.doc_locations = {}
         self.continents = {}
         self.browser_families = {}
-        self.reader_profiles = {}
+        self.reader_profiles = OrderedDict()
         self.document_readers = {}
         self.visitor_documents = {}
-        self.figsize = fig_dimensions
         self.counted = False
         self.histo_config = None
 
         self.data_fns = []
+        if count_doc_locations:
+            self.data_fns.append(self.find_doc_locations)
         if count_browser:
             self.data_fns.append(self.count_browsers)
         if count_country:
@@ -100,7 +232,7 @@ class DataCollector(Analyse):
         if collect_doc_data:
             self.data_fns.append(self.collect_document_readers)
 
-    def set_read_path(self, path):
+    def set_read_path(self, path: str) -> None:
         """Specify the path for LocationViews to read from
 
         Args:
@@ -108,15 +240,32 @@ class DataCollector(Analyse):
         """
         self.path = path
 
-    def gather_data(self, threaded=False, num_threads=1, chunk_size=100000):
+    def gather_data(self, concurrent: bool=True, max_workers: int=None, chunk_size: int=500000) -> None:
         """Compute the counts of the required data
         """
         ParseFile(self.path, chunk_size=chunk_size).parse_file(
-            self, threaded=threaded, num_threads=num_threads)
+            self, concurrent=concurrent, max_workers=max_workers)
         self.counted = True
 
 
-    def count_countries(self, json):
+    def find_doc_locations(self, json: dict) -> None:
+        """Collect all document location data
+
+        Args:
+            json (dict): dict returned by json.load
+        """
+        doc_uuid = json.get('subject_doc_id', None)
+        location = json.get('visitor_country', None)
+        if doc_uuid is not None and location is not None:
+            if self.doc_locations.get(doc_uuid, None) is None:
+                doc = DocLocation(doc_uuid).add_location(location)
+                self.doc_locations[doc_uuid] = doc
+            else:
+                doc = DocLocation(doc_uuid).add_location(location)
+                self.doc_locations[doc_uuid] += doc
+                
+
+    def count_countries(self, json: dict) -> None:
         """Increment the dictionary counter for the country in json
 
         Args:
@@ -130,7 +279,7 @@ class DataCollector(Analyse):
                 self.countries[location] += 1
         
 
-    def count_continents(self, json):
+    def count_continents(self, json: dict) -> None:
         """Increment the dictionary counter for the continent derived from the country in json
 
         Args:
@@ -145,7 +294,7 @@ class DataCollector(Analyse):
                 self.continents[continent_n] += 1
         
 
-    def count_browsers(self, json):
+    def count_browsers(self, json: dict) -> None:
         """Update the browser family count field in self
 
         Args:
@@ -156,12 +305,12 @@ class DataCollector(Analyse):
             user_agent = ua_parse(ua_string)
             browser = user_agent.browser.family
             if self.browser_families.get(browser, None) is None:
-                self.browser_families[browser] = 1
+                self.browser_families[browser] = BrowserData(browser, ua_string)
             else:
-                self.browser_families[browser] += 1
+                self.browser_families[browser] += BrowserData(browser, ua_string)
 
 
-    def collect_reading_data(self, json):
+    def collect_reading_data(self, json: dict) -> None:
         """Update reading data for each uuid
 
         Args:
@@ -176,86 +325,52 @@ class DataCollector(Analyse):
                 self.reader_profiles[uuid].new_read(reading_time)
 
 
-    def collect_document_readers(self, json):
+    def collect_document_readers(self, json: dict) -> None:
         """Collect document id and reader id information
 
         Args:
             json (dict): dict returned by json.load
         """
-        document = json.get('env_doc_id')
+        document = json.get('subject_doc_id')
         uuid = json.get('visitor_uuid')
         if document is not None and uuid is not None:
             if self.document_readers.get(document, None) is None:
                 self.document_readers[document] = [uuid]
             else:
                 self.document_readers[document].append(uuid)
+
             if self.visitor_documents.get(uuid, None) is None:
                 self.visitor_documents[uuid] = [document]
             else:
                 self.visitor_documents[uuid].append(document)
 
 
-    def merge(self, other):
+    def merge(self, other) -> None:
         """Merge the dictionaries of other with self
 
         Args:
             other (DataCollector): other must be a DataCollector instance
         """
+        self.doc_locations = merge_dict(self.doc_locations, other.doc_locations)
         self.countries = merge_dict(self.countries, other.countries)
         self.continents = merge_dict(self.continents, other.continents)
         self.browser_families = merge_dict(self.browser_families, other.browser_families)
+        self.reader_profiles = merge_dict(self.reader_profiles, other.reader_profiles)
         self.document_readers = merge_dict(self.document_readers, other.document_readers)
         self.visitor_documents = merge_dict(self.visitor_documents, other.visitor_documents)
 
-    
+    def clear(self) -> None:
+        """Clear the data in this dict
+        """
+        self.countries = {}
+        self.continents = {}
+        self.doc_locations ={}
+        self.browser_families = {}
+        self.reader_profiles = {}
+        self.document_readers = {}
+        self.visitor_documents = {}
 
 
 #! --------------------- MOVE TO NEW CLASS -------------------------
 
-
-    def histogram(self):
-        if self.histo_config is not None:
-            figure = self.histo_config
-        else:
-            figure = self.configure_figure()
-        Charts(n_rows=len(figure[0]), figsize=self.figsize).histogram(
-            figure[0], figure[1], figure[2], figure[3])
-
-    def configure_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None):
-        if sorted:
-            self.sorted(reverse)
-        
-        continents = self.continents
-        countries = self.countries
-        browsers = self.browser_families
-        if n_continents is not None:
-            continents = dict(list(self.continents.items())[:n_continents])
-        if n_countries is not None:
-            countries = dict(list(self.countries.items())[:n_countries])
-        if n_browsers is not None:
-            browsers = dict(list(self.browser_families.items())[:n_browsers])
-        data = []
-        titles = []
-        x_labels = []
-        y_labels = []
-        if show_continents:
-            data.append(continents)
-            titles.append('Views from each continent')
-            x_labels.append('')
-            y_labels.append('Continent')
-
-        if show_countries:
-            data.append(countries)
-            titles.append('Views from each country')
-            x_labels.append('')
-            y_labels.append('Country')
-
-        if show_browsers:
-            data.append(browsers)
-            titles.append('Views from each browser')
-            x_labels.append('')
-            y_labels.append('Browser')
-
-        self.histo_config = (data, titles, x_labels, y_labels)
-        return (data, titles, x_labels, y_labels)
 

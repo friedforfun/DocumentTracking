@@ -14,9 +14,9 @@ def test_rew_read():
 
 def test_is_valid_operand():
     read_data = ReadingData('test')
-    assert read_data._is_valid_operand(20)
-    assert read_data._is_valid_operand(ReadingData('test2'))
-    assert not read_data._is_valid_operand(0.1)
+    assert read_data.is_valid_operand(20)
+    assert read_data.is_valid_operand(ReadingData('test2'))
+    assert not read_data.is_valid_operand(0.1)
 
 
 def test_total_ordering():

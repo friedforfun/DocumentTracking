@@ -1,4 +1,5 @@
 alabaster==0.7.12
+alive-progress==1.6.1
 argon2-cffi==20.1.0
 astroid==2.4.2
 async-generator==1.10
@@ -15,7 +16,7 @@ cycler==0.10.0
 decorator==4.4.2
 defusedxml==0.6.0
 docutils==0.16
--e git+https://github.com/friedforfun/DocumentTracking.git@06daf01d2cd7a296eaffa9808d846f8009f1e453#egg=DocuTrace&subdirectory=Application
+-e git+https://github.com/friedforfun/DocumentTracking.git@28f162c61be531b8be423eba7451137f5ee800b6#egg=DocuTrace&subdirectory=Application
 entrypoints==0.3
 graphviz==0.15
 idna==2.10
@@ -67,9 +68,11 @@ pytest==6.1.2
 pytest-cov==2.10.1
 pytest-mock==3.3.1
 python-dateutil==2.8.1
+python-decouple==3.3
 pytz==2020.4
 PyYAML==5.3.1
 pyzmq==20.0.0
+regex==2020.11.13
 repoze.lru==0.7
 requests==2.25.0
 Send2Trash==1.5.0

@@ -1,22 +1,46 @@
 #!/usr/bin/env python
 import sys, argparse
+from threading import Thread
+from DocuTrace.Analysis.ComputeData import ComputeData
+from DocuTrace.Analysis.DataCollector import DataCollector
 from DocuTrace.Utils.Logging import logger
+from DocuTrace.Utils.Validation import str2bool, validate_path, validate_task
+from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError
+from DocuTrace.Utils.Tasks import tasks
+
 
 def main():
-    next_step()
     run(parse_args())
 
 
 def run(args):
     try:
-        # Step 1. Parse and validate arguments
-        user_uuid = args.user_uuid
-        doc_uuid = args.doc_uuid
-        tast_id = args.task_id
-        filename = args.filename
+        verbosity = args.verbose
+        logger.setLevel(verbosity)
+        logger.info('Verbosity set to display info messages.')
+        logger.debug('Verbosity set to display debug messages.')
+
+        path = validate_path(args.filepath)
+
+        data_collector = DataCollector(path)
+        load = Thread(target=process_file, args=(data_collector,), daemon=True)
+        load.start()
+
+        task = validate_task(args.task_id)
+        tasks(data_collector, load, task, args)
+
+
+
         print('Sucess!')
         # Step 2. Load data
-        next_step(step_id=2)
+
+    except InvalidPathError as e:
+        logger.exception(e)
+        sys.exit(1)
+
+    except InvalidTaskIDError as e:
+        logger.exception(e)
+        sys.exit(1)
 
     except Exception as e:
         logger.exception(e)
@@ -25,57 +49,59 @@ def run(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    args = parser.add_argument_group('Params')
-    args.add_argument('-u', '--user_uuid', nargs=1, help='Specifies the user uuid', required=False)
-    args.add_argument('-d', '--doc_uuid', nargs=1, help='Specifies the document uuid', required=False)
-    # Task id is mandatory for command line usage
-    args.add_argument('-t', '--task_id', nargs=1, help='Specifies the task id', required=True)
-    args.add_argument('-f', '--filepath', nargs=1, help='Specifies the file name', required=False)
-    args.add_argument('-v', '--verbose', type=str2bool, required=False, default=False, nargs='?', const=True, help='Set a verbose output')
+    """Parse the args provided to this namespace
+
+    usage: ``main.py [-h] [-u USER_UUID] [-d DOC_UUID] [-t TASK_ID] -f FILEPATH [-n [LIMIT_DATA]] [-v [VERBOSE]] [-e [EXIT_EARLY]]``
+
+    **Command line interface for DocuTrace.**
+    
+
+    optional arguments:
+
+    -h, --help            show this help message and exit
+
+    Core parameters:
+
+    -u USER_UUID, --user_uuid USER_UUID         Specifies the user uuid
+                            
+    -d DOC_UUID, --doc_uuid DOC_UUID            Specifies the document uuid
+                            
+    -t TASK_ID, --task_id TASK_ID               Specifies the task id
+                            
+    -f FILEPATH, --filepath FILEPATH            Specifies the file name
+                            
+
+    Secondary parameters:
+
+    -n LIMIT_DATA, --limit_data LIMIT_DATA      Limits the number of displayed data points for tasks 2a, 2b, 3a, 3b, 4d, and 5.
+                            
+    -v VERBOSE, --verbose VERBOSE               Set the verbosity level, 20 for INFO, 10 for DEBUG. Default is 30: WARN
+                            
+    -e EXIT_EARLY, --exit_early EXIT_EARLY      Exit the program after running only the specified task.
+
+    Returns:
+        ArgumentParser: Parsed arguments
+    """
+    parser = argparse.ArgumentParser(description='Command line interface for DocuTrace.')
+    args = parser.add_argument_group('Core parameters')
+    args.add_argument('-u', '--user_uuid', help='Specifies the user uuid', required=False, default=None, type=str)
+    args.add_argument('-d', '--doc_uuid',help='Specifies the document uuid', required=False, default=None, type=str)
+    args.add_argument('-t', '--task_id', help='Specifies the task id', required=False, type=str)
+    args.add_argument('-f', '--filepath', help='Specifies the file name', required=True, type=str)
+
+    secondary_args = parser.add_argument_group('Secondary parameters')
+    secondary_args.add_argument('-n', '--limit_data', help='Limits the number of displayed data points for tasks 2a, 2b, 3a, 3b, 4d, and 5.', type=int, required=False, default=None, const=20, nargs='?')
+    secondary_args.add_argument('-v', '--verbose', type=int, required=False, default=30, nargs='?',
+                                const=20, help='Set the verbosity level, 20 for INFO, 10 for DEBUG. Default is 30: WARN')
+    secondary_args.add_argument('-e', '--exit_early', type=str2bool, default=False, const=True,
+                                nargs='?', help='Exit the program after running only the specified task.')
     return parser.parse_args()
 
 
-def static_vars(**kwargs):
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-
-    return decorate
-
-@static_vars(step_id=0)
-def next_step(additional_info='', step_id=0):
-    step_names = {
-        1: '1',
-        2: '2'
-    }
-
-    if step_id != 0:
-        next_step.step_id = step_id
-    else:
-        next_step.step_id += 1
-
-    if next_step.step_id not in step_names.keys():
-        raise Exception('Step ID {} is out of total steps number '.format(
-            next_step.step_id, str(len(step_names))))
-
-    step_info_template = '[Step {}/{}] {}'
-    step_name = step_names[next_step.step_id] + \
-        (' ({})'.format(additional_info) if additional_info else '')
-    step_info_template = step_info_template.format(
-        next_step.step_id, len(step_names), step_name)
-    print(step_info_template)
-
-
-
-def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+def process_file(data_collector):
+    """Begin processing this file.
+    """
+    data_collector.gather_data()
 
 
 if __name__ == "__main__":

@@ -6,10 +6,13 @@
 Welcome to DocuTrace's documentation!
 =====================================
 
+   readme
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents:
-
+   
+   readme
    DocuTrace
 
 Indices and tables

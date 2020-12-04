@@ -1,4 +1,5 @@
 import logging
+import functools
 import sys
 
 logging.basicConfig(format='[ %(levelname)s ] %(message)s', level=logging.INFO, stream=sys.stdout)
@@ -11,8 +12,11 @@ def debug(func):
     Args:
         func (Any -> Any): Any function
     """
+    @functools.wraps(func)
     def inner(*args, **kwargs):
+        from DocuTrace.Utils.Logging import logger, logging
         logger.setLevel(logging.DEBUG)
-        func(*args, **kwargs)
-        logger.setLevel(logging.WARN)
+        return func(*args, **kwargs)
+        
+    logger.setLevel(logging.INFO)
     return inner
