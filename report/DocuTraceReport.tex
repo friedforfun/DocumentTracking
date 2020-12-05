@@ -80,12 +80,62 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
 
 
 \section{Requirements Checklist}
+% ------------------------------------------- REQUIREMENTS ---------------------------------------------------------------
 \emph{Here you should clearly show which requirements you have delivered andwhich you haven’t.}
 
+Requirements marked with the Priority \textbf{Essential} are requirements explicitly requested in the task brief.\\
+\linebreak
+\noindent{\Large \emph{The priority for each requirement is encoded as follows:}}
 
+\begin{itemize}
+    \item \textbf{Essential} - This priority indicates that this requirement must be implemented to satisfy basic functionality of the browser.
+    \item High - A high priority indicates that this requirement is important for providing a good quality user experience.
+    \item Medium - A medium priority requirement is nice to have but if it is missing it is acceptable.
+    \item Low - Low priority indicates that this is unlikely to be fulfilled within the time frame of the project, a stretch goal at best.
+\end{itemize}
+
+\begin{center}
+    \begin{longtable}{|p{3cm}|p{7cm}|l|p{2cm}|}
+        \hline
+        \textbf{Requirement} & \textbf{Description} & \textbf{Priority} & \textbf{Status}\\
+        \hline \endhead
+        Runs on Linux & The application needs to run on an up-to-date Linux platform (Ubuntu 20.04) & \textbf{Essential} & Complete \\
+        \hline
+        Use Python 3 & The core logic of the application should be implemented in Python 3 & \textbf{Essential} & Complete\\
+        \hline
+        Views by country & Given a document UUID find from which countries the document has been viewed, display as histogram & \textbf{Essential} & Complete\\
+        \hline
+        Views by continent & Given a document UUID find from which continent the document has been viewed, display as histogram & \textbf{Essential} & Complete\\ 
+        \hline
+        Views by browser & For an input file count the number of occurrences for each browser used to access each document in the file, display full and truncated strings as histogram & \textbf{Essential} & Complete \\
+        \hline
+        Reader profiles & For each user find the total time spent reading documents, display the top 10 & \textbf{Essential} & Complete \\
+        \hline
+        Readers of document & For a given document identify all visitor UUIDs of readers of that document & \textbf{Essential} & Complete \\
+        \hline
+        Documents from reader & For a given reader identify all documents that reader has read & \textbf{Essential} & Complete \\
+        \hline
+        "Also likes" functionality & Using the readers of document and document from reader functionality return a list of documents sorted by a given sorting function as a parameter & \textbf{Essential} & Complete \\ 
+        \hline
+        "Also likes" graph & generate a graph that visualises the "Also likes" functionality & \textbf{Essential} & Complete \\
+        \hline
+        Simple GUI & Develop a simple GUI based on tkinter to display the statistical data and recieve input parameters & \textbf{Essential} & Complete \\
+        \hline
+        Command-line usage & Provide a command line usage to test the application functionality in an automated way & \textbf{Essential} & Complete \\
+        \hline
+        Display query history in GUI & Extend the gui to display a history of queries that allow navigation to past queies & Medium & Incomplete \\
+        \hline
+        Provide documentation & Generate and host documentation for the application & High & Complete \\ 
+        \hline
+        Log exceptions and warnings & Log any exceptions encountered to be handled by journald & Low & Complete \\
+        \hline
+
+    \end{longtable}
+\end{center}
 
 
 \section{Design Considerations}
+% ------------------------------------------- DESIGN ---------------------------------------------------------------
 \emph{Here you should clearly state what you have done to your application tomake it more usable and accessible.}
 
 Extensive documentation has been provided for other developers wishing to extend this codebase, additionally the \code{PEP8} sytle guide has been utilised to aid readability and help ensure consistent coding style. 
@@ -100,9 +150,11 @@ A logger is used to handle debug, info, warning and exception messages. The logg
 
 
 \section{User Guide}
+% ------------------------------------------- USER GUIDE ---------------------------------------------------------------
 \emph{Use screen shots of the running application along with text descriptions to help youdescribe how to operate the application.}
 
 \section{Developer Guide}
+% ------------------------------------------- DEVELOPER GUIDE ---------------------------------------------------------------
 \emph{Describe your application design and main areas of code in order to help another developer understand your work and how they might develop it. You may find it useful to supplementthe text with code fragments.}
 
 The provided documentation includes a definition of expected parameter types for all functions and methods. 
@@ -174,9 +226,11 @@ The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.htm
 \subsubsection{Validation}
 
 \section{Testing}
+% ------------------------------------------- TESTING ---------------------------------------------------------------
 \emph{Show  the  results  for  testing  all  cases  and  prove  that  the  outputs  are  what  are  expected.Preferably,  use  unit  testing  to  test  core  functionality  of  the  implementation.   If  certain  conditionscause erroneous results or the application to crash then report these honestly.}
 
 \section{Personal Development}
+% ------------------------------------------- PERSONAL DEVELOPMENT ---------------------------------------------------------------
 \emph{A short discussion on lessons learnt from the feedback given on CW1and a discussion how you integrated this feedback into CW2.  Cover both coding and report writing,possibly more (project management, preparing for interview style questions etc).}
 Lessons learnt from the experience of CW1:
 Started out using test driven development
@@ -207,6 +261,7 @@ conclusion:
 
 
 \section{Conclusions}
+% ------------------------------------------- CONCLUSION ---------------------------------------------------------------
 \emph{Reflect on what you are most proud of in the application and what you’d have likedto have done differently.  You should reflect on the produced software, and compare software devel-opment in scripting vs.  systems languages.}
 Most proud of:
 - Concurrency during file reading
