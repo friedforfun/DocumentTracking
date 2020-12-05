@@ -140,13 +140,11 @@ Requirements marked with the Priority \textbf{Essential} are requirements explic
 
 Extensive documentation has been provided for other developers wishing to extend this codebase, additionally the \code{PEP8} sytle guide has been utilised to aid readability and help ensure consistent coding style. 
 
-In addition to the requireed parameters specified in the CLI requirement some secondary parameters have been included, this includes controls to log verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
+In addition to the required parameters specified in the CLI requirement some secondary parameters have been included, this includes log level verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
 
 The potentially long loading times when procesing large datafiles motivated the inclusion of an animated loading bar to provide some feedback to the user.
 
 A logger is used to handle debug, info, warning and exception messages. The logger sends messages to stdout so they can be managed by journald, this includes exceptions and traceback messages this is a common practice and lets system admins handle the log output as they see fit. The verbosity of the log message can be set with the -v parameter, by default all messages of logging level WARNING and above are displayed.
-
-
 
 
 \section{User Guide}
