@@ -5,8 +5,16 @@ from DocuTrace.Gui.Tab import Tab, tab_dict
 from DocuTrace.Utils.Logging import logger
 
 class GuiRoot(tk.Tk):
+    """[summary]
 
-    def __init__(self, compute_data, doc_uuid=None, user_uuid=None, n=None, start_tab: str=None):
+    Args:
+        compute_data (ComputeData): An instance of the ComputeData class
+        doc_uuid (str, optional): A document uuid. Defaults to None.
+        user_uuid (str, optional): A user uuid. Defaults to None.
+        n (int, optional): A number indicating how many elements to display in the content frame. Defaults to None.
+        start_tab (str, optional): The identifier of the tab to open first. Defaults to None.
+    """
+    def __init__(self, compute_data, doc_uuid: str=None, user_uuid: str=None, n: int=None, start_tab: str=None):
         super().__init__()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.geometry('850x750')
@@ -46,7 +54,8 @@ class GuiRoot(tk.Tk):
 
 
 def open(*args, **kwargs):
-
+    """Function to start gui
+    """
     gui = GuiRoot(*args, **kwargs)
     gui.start()
 

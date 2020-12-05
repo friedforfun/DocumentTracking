@@ -32,7 +32,6 @@ def run(args):
 
 
         print('Sucess!')
-        # Step 2. Load data
 
     except InvalidPathError as e:
         logger.exception(e)
