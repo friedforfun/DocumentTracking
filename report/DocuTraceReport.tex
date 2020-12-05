@@ -36,6 +36,8 @@
 \hypersetup{ linktoc=all}
 \graphicspath{ {./images/} }
 
+\definecolor{light-gray}{gray}{0.95}
+\newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
 
 \begin{document}
 \title{%
@@ -86,11 +88,15 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
 \section{Design Considerations}
 \emph{Here you should clearly state what you have done to your application tomake it more usable and accessible.}
 
+Extensive documentation has been provided for other developers wishing to extend this codebase, additionally the \code{PEP8} sytle guide has been utilised to aid readability and help ensure consistent coding style. 
+
 In addition to the requireed parameters specified in the CLI requirement some secondary parameters have been included, this includes controls to log verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
 
 The potentially long loading times when procesing large datafiles motivated the inclusion of an animated loading bar to provide some feedback to the user.
 
 A logger is used to handle debug, info, warning and exception messages. The logger sends messages to stdout so they can be managed by journald, this includes exceptions and traceback messages this is a common practice and lets system admins handle the log output as they see fit. The verbosity of the log message can be set with the -v parameter, by default all messages of logging level WARNING and above are displayed.
+
+
 
 
 \section{User Guide}
@@ -116,10 +122,10 @@ An instance of the ComputeData class is instantiated useing the data obtained by
 Once the gui opens the selected task should be visible on the screen, with the data visible, at this point new parameters for the various tasks can be provided to view other datapoints related to this task, or the number of instances displayed can be modified, depending on the task.
 
 \subsection{Analysis package}
-
-This package includes the FileRead module, FileRead handles all interaction with the filesystem with reguards to opening and closing the file. The core function used to read from the file is the stream\_file\_chunks function, this function creates an iterator and laziliy reads the file on demand. 
-There are 3 classes within this module, ParseFile, JsonProcessContextManager, and JsonParseProcess. 
-A file is actually read by the parse\_file method of the ParseFile class, when concurrency is enabled it uses the JsonProcessContextManager to add chunks of the JSON data file to a JoinableQueue managed by the context manager, see Fig.~\ref{fig:JSONPContextManager}.
+\subsubsection{FileRead}\label{sec:FileRead}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#module-DocuTrace.Analysis.FileRead}{FileRead} module handles all interaction with the filesystem with reguards to opening and closing the file. The core function used to read from the file is the \code{stream\_file\_chunks()} function, this function creates an iterator and laziliy reads the file on demand. 
+There are 3 classes within this module, \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#DocuTrace.Analysis.FileRead.ParseFile}{ParseFile}, \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#DocuTrace.Analysis.FileRead.JsonProcessContextManager}{JsonProcessContextManager}, and \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#DocuTrace.Analysis.FileRead.ParseFile}{JsonParseProcess}. 
+A file is actually read by the \code{parse\_file()} method of the ParseFile class, when concurrency is enabled it uses the JsonProcessContextManager to add chunks of the JSON data file to a JoinableQueue~\autocite{MultiprocessingProcessbasedParallelism} managed by the context manager, see Fig.~\ref{fig:JSONPContextManager}.
 The context manager starts all the processes, and maintains 2 queues: the aformentioned queue that recieves JSON chunks, and a queue to recieve processed data back from each process know as the feedback\_queue.
 
 \begin{figure}[h]
@@ -134,10 +140,38 @@ The context manager starts all the processes, and maintains 2 queues: the aforme
     \label{fig:JSONPContextManager}
 \end{figure}
 
-The JsonParseProcess subclasses pythons Process class to get around the global interpreter lock, it takes chunks from the JSON queue, processes the chunk and then adds a DataCollector class to the feedback queue until all items have been processed. 
+The JsonParseProcess subclasses pythons Process~\autocite{MultiprocessingProcessbasedParallelism} class to get around the global interpreter lock, it takes chunks from the JSON queue, processes the chunk and then adds a DataCollector class to the feedback queue until all items have been processed. 
 There is substantial room for optimisaion in this class, deepcopy is utilised liberally as a workaround to prevent race conditions, however this adds substantal overhead to the processing time (almost double) for collection of data.
 
 When the context manager main thread is finished enqueueing JSON chunks it starts a thread to deque and merge the feedback queue back into a single instance of the DataCollector class.
+
+\subsubsection{DataCollector}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#module-DocuTrace.Analysis.DataCollector}{DataCollector module} features 3 convienience classes (ReadingData, BrowserData, and DocLocation) to help with internal data representation in the DataCollector class. The convienience classes all overload the \code{\_\_add\_\_()} method which is used when the \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#DocuTrace.Analysis.DataCollector.merge_dict}{merge\_dict()} function is used, additionally ReadingData and BrowserData overload \code{\_\_eq\_\_()} and \code{\_\_lt\_\_()} methods which when combined with the \code{@total\_ordering} decorator from functools~\autocite{FunctoolsHigherorderFunctions} allows all comparison operations to be performed.
+
+The constructor of the DataCollector class itself has parameters to disable collection of a specific metric if desired, this can be useful to speed up testing, the path paramter is important; it is passed to an instace of ParseFile (see Section~\ref{sec:FileRead}). During instantiation the constructor builds a list of methods that will be used by the ParseFile class to process the JSON data once the~\code{gather\_data()} method is called.
+
+\subsubsection{ComputeData}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Analysis.html#module-DocuTrace.Analysis.ComputeData}{ComputeData} class contains several helper functions indluding some sorting functions and funcstions to get country and continent names from an Alpha2 country code.
+
+
+\subsubsection{Plots}
+
+\subsection{Gui}
+\subsubsection{main}
+
+\subsubsection{Tab}
+
+\subsubsection{Tasks}
+
+
+\subsection{Utils}
+\subsubsection{Exceptions}
+
+\subsubsection{Logging}
+
+\subsubsection{Tasks}
+
+\subsubsection{Validation}
 
 \section{Testing}
 \emph{Show  the  results  for  testing  all  cases  and  prove  that  the  outputs  are  what  are  expected.Preferably,  use  unit  testing  to  test  core  functionality  of  the  implementation.   If  certain  conditionscause erroneous results or the application to crash then report these honestly.}
