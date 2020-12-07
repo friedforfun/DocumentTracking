@@ -67,7 +67,7 @@ The website hosts a substantial number of documents, and provides anonymised usa
 
 We make three assumptions based on the information from the dataset specification~\autocite{IssuuAnonymousDataset}, first that a read is triggered by a 'read' event type, 'pageread' is omitted because it seems there are instances of 'pageread' events that dont correspond to 'read' events, secondly, we assume that any event on a document constitutes a 'view' thus we gather a broader category of metrics when counting views by country/continent/browser than when computing reader profiles or 'Also likes' data, and finally we assume that 'readtime' is the exclusive event indicator for an event containing read time data when building reader profiles.
 
-This application aims to satisfy the task of processing this data according to these parameters while considering optimisations to speed up processing potentially very large files, while also providing a solid interface to visualise the data.
+This application aims to satisfy the task of processing this data according to these parameters while considering optimisations to speed up the processing time with potentially very large files, while also providing a solid interface to visualise the data.
 It was also a priority to provide easily extendable code practices so that custom data collection strategies can be easily implemented.
 
 It is assumed the users of an application like DocuTrace would be someone with a high enough degree of technical competency to use simple Linux command line applications, the user would likely be a researcher (data science), or a business. 
@@ -147,7 +147,7 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
 \section{Design Considerations}
 % ------------------------------------------- DESIGN ---------------------------------------------------------------
 
-Extensive documentation has been provided for other developers wishing to extend this codebase, the documenation has been styled useing the "readthedocs" theme~\autocite{HomeReadDocs}. Additionally the \code{PEP8} sytle guide~\autocite{PEPStyleGuide} has been utilised to aid readability and help ensure consistent coding style. 
+Extensive documentation has been provided for other developers wishing to extend this codebase, the documenation has been styled using the "readthedocs" theme~\autocite{HomeReadDocs}, a popular python documenation style with nice readability, see Fig.~\ref{fig:rtd}. Additionally the \code{PEP8} sytle guide~\autocite{PEPStyleGuide} has been utilised to aid readability and help ensure consistent coding style. 
 
 As well as the required parameters specified in the CLI task specification some secondary parameters have been included, this includes log level verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
 
@@ -155,10 +155,17 @@ The potentially long loading times when procesing large datafiles motivated the 
 
 A logger is used to handle debug, info, warning and exception messages. The logger sends messages to stdout so they can be managed by journald, this includes exceptions and traceback messages this is a common practice and lets system admins handle the log output as they see fit. The verbosity of the log message can be set with the -v parameter, by default all messages of logging level WARNING and above are displayed.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{rtdDocs.png}
+    \caption{Read the docs themed documentation}
+    \label{fig:rtd}
+\end{figure}
+
 
 \newpage
 \section{User Guide}
-%! ------------------------------------------- USER GUIDE ------------------------------------------------------------
+% ------------------------------------------- USER GUIDE ------------------------------------------------------------
 
 \begin{figure}[h]
     \begin{minted}[breaklines]{bash}
@@ -192,7 +199,7 @@ For help a \code{-h} flag can be passed and the program will display all the par
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Task6Tab.png}
-    \caption{CLI parameter help}
+    \caption{GUI annotations}
     \label{fig:GraphAnnotated}
 \end{figure}
 
@@ -368,6 +375,7 @@ Additionally the also likes functionality has a bug where sometimes on launch it
 
 Sometimes Numpy raises the ``FutureWarning: elementwise comparison failed'' warning, this is raised from line 157, 158 of the ComputeData module, the bug is inconsistent and not always easy to replicate, so fixing it has been challenging, it appears to be caused by using numpy boolean indexing to filter unwanted data from the \code{relevant\_docs} numpy array.
 
+\newpage
 \section{Personal Development}
 % ------------------------------------------- PERSONAL DEVELOPMENT ---------------------------------------------------------------
 \subsection{Lessons from CW1}
@@ -401,7 +409,7 @@ When writing CW1 I wrote the back end code and front end in parallel, this also 
         \end{itemize}
     \item Conclusion
         \begin{itemize}
-            \item Feeback: Should discuss advanced language features - 
+            \item Feeback: Should discuss advanced language features - advanced language features are included in the conclusion
         \end{itemize}
 \end{itemize}
 
