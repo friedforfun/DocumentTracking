@@ -77,13 +77,13 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
 
 \subsection{Libraries}
 \begin{itemize}
-    \item numpy - Used for convienience and access to fast low-level vector operations.
+    \item numpy - Used for convienience and access to fast C vector operations.
     \item matplotlib - This library was used to display charts.
     \item user-agents - Helped translate the 'user-agent' JSON entry into a more readable format.
     \item pycountry - Converts countries alpha2 code into a full country name.
     \item pycountry-convert - Get the name of a continent for a given country.
     \item graphviz - Used to plot the "Also likes" graph.
-    \item regex - This library is prefered to the standard "re" library because it has a full match method, and allows us to easily compile and reuse a regex expression.
+    \item regex - This library is prefered to the standard "re" library because it has a \code{fullmatch()} method, and allows us to easily compile and reuse a regex expression.
     \item alive-progress - Provides beautiful, easy to implement progress bars when the total load time is unknown.
     \item python-decouple - Convieniently reads environment variables and .env files with no boilerplate code.
 \end{itemize}
@@ -142,11 +142,10 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
 
 \section{Design Considerations}
 % ------------------------------------------- DESIGN ---------------------------------------------------------------
-\emph{Here you should clearly state what you have done to your application tomake it more usable and accessible.}
 
-Extensive documentation has been provided for other developers wishing to extend this codebase, the documenation has been styled useing the "readthedocs" theme~\autocite{HomeReadDocs}. Additionally the \code{PEP8} sytle guide has been utilised to aid readability and help ensure consistent coding style. 
+Extensive documentation has been provided for other developers wishing to extend this codebase, the documenation has been styled useing the "readthedocs" theme~\autocite{HomeReadDocs}. Additionally the \code{PEP8} sytle guide~\autocite{PEPStyleGuide} has been utilised to aid readability and help ensure consistent coding style. 
 
-In addition to the required parameters specified in the CLI task specification some secondary parameters have been included, this includes log level verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
+As well as the required parameters specified in the CLI task specification some secondary parameters have been included, this includes log level verbosity, an argument to limit the volume of data displayed in the GUI and command line, and a parameter to exit the application early (used when only a single task is needed).
 
 The potentially long loading times when procesing large datafiles motivated the inclusion of an animated loading bar to provide some feedback to the user.
 
@@ -155,8 +154,7 @@ A logger is used to handle debug, info, warning and exception messages. The logg
 
 
 \section{User Guide}
-% ------------------------------------------- USER GUIDE ------------------------------------------------------------
-\emph{Use screen shots of the running application along with text descriptions to help youdescribe how to operate the application.}
+%! ------------------------------------------- USER GUIDE ------------------------------------------------------------
 This application is started from the command line, all arguments are optional, but supplying at least a filepath and task id as parameters will speed up operation. For help a \code{-h} flag can be passed and the program will display all the parameters it can take with a description, see Fig.~\ref{fig:CLIOpts} for a listing of CLI options.
 \begin{figure}[h]
     \begin{minted}[breaklines]{bash}
@@ -319,7 +317,7 @@ The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#m
 It uses a similar pattern as the Gui for task selection, however this time it uses and \code{OrderedDict} class to enable functionality to move to the next task in order without restarting the program, when the \code{-e} parameter is not supplied.
 
 \subsubsection{Validation}
-The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Validation}{Validation} module has functions to handle input validation and path checking. Credit for the \code{is\_pathname\_valid()} function goes to Cecil Curry from \href{https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta}{this entertaining stack overflow post}.
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Validation}{Validation} module has functions to handle input validation and path checking. Credit for the \code{is\_pathname\_valid()} function goes to Cecil Curry from \href{https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta}{this entertaining stack overflow post}\autocite{FilesystemsCheckWhether}.
 
 
 \section{Testing}
@@ -385,7 +383,8 @@ Do differently:
 - Use a different library for the gui
 - subclass the datacollector class to break it into smaller tasks
 
-
+Adv lang features:
+Decorators, lazy iterators, Processes, higher order functions, dynamic (duck) typing
 
 
 \pagebreak
