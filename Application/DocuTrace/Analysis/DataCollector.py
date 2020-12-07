@@ -1,7 +1,7 @@
 from functools import total_ordering
 from user_agents import parse as ua_parse
 from collections import OrderedDict
-
+import functools
 from .FileRead import ParseFile
 from ..Utils.Logging import logger, debug
 
@@ -21,6 +21,51 @@ def merge_dict(own: dict, other: dict) -> dict:
         else:
             own[element] += other[element]
     return own
+ 
+
+def CheckEventReadtime(func):
+    """Wrapper to check if the event type is "read" or impression
+
+    Args:
+        func (dict -> Any): A function taking a json dict as an argument.
+
+    Returns:
+        dict -> Any: Returns the wrapped function
+    """
+    @functools.wraps(func)
+    def inner(self, json, **kwargs):
+        if type(json) is not dict:
+            return
+        event_type = json.get('event_type', None)
+        valid_events = ['read', 'pageread', 'pagereadtime']
+        if event_type in valid_events:
+            return func(self, json, **kwargs)
+        else:
+            return
+    return inner
+
+
+def CheckEventRead(func):
+    """Wrapper to check if the event type indicates the document has been read
+
+    Args:
+        func (dict -> Any): A function taking a json dict as an argument.
+
+    Returns:
+        dict -> Any: Returns the wrapped function
+    """
+    @functools.wraps(func)
+    def inner(self, json, **kwargs):
+        if type(json) is not dict:
+            return
+        event_type = json.get('event_type', None)
+        valid_events = ['read', 'pageread']
+        if event_type in valid_events:
+            return func(self, json, **kwargs)
+        else:
+            return
+    return inner    
+
 
 @total_ordering
 class ReadingData:
@@ -247,7 +292,7 @@ class DataCollector:
             self, concurrent=concurrent, max_workers=max_workers)
         self.counted = True
 
-
+    #@CheckEventRead
     def find_doc_locations(self, json: dict) -> None:
         """Collect all document location data
 
@@ -263,8 +308,8 @@ class DataCollector:
             else:
                 doc = DocLocation(doc_uuid).add_location(location)
                 self.doc_locations[doc_uuid] += doc
-                
-
+                    
+    #@CheckEventRead
     def count_countries(self, json: dict) -> None:
         """Increment the dictionary counter for the country in json
 
@@ -277,8 +322,8 @@ class DataCollector:
                 self.countries[location] = 1
             else:
                 self.countries[location] += 1
-        
-
+            
+    #@CheckEventRead
     def count_continents(self, json: dict) -> None:
         """Increment the dictionary counter for the continent derived from the country in json
 
@@ -292,8 +337,8 @@ class DataCollector:
                 self.continents[continent_n] = 1
             else:
                 self.continents[continent_n] += 1
-        
-
+            
+    #@CheckEventRead
     def count_browsers(self, json: dict) -> None:
         """Update the browser family count field in self
 
@@ -309,7 +354,7 @@ class DataCollector:
             else:
                 self.browser_families[browser] += BrowserData(browser, ua_string)
 
-
+    @CheckEventReadtime
     def collect_reading_data(self, json: dict) -> None:
         """Update reading data for each uuid
 
@@ -318,13 +363,15 @@ class DataCollector:
         """
         reading_time = json.get('event_readtime')
         uuid = json.get('visitor_uuid')
-        if reading_time is not None and uuid is not None:
-            if self.reader_profiles.get(uuid, None) is None:
-                self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
-            else:
-                self.reader_profiles[uuid].new_read(reading_time)
+        event_type = json.get('event_type')
+        if event_type ==  'read':
+            if reading_time is not None and uuid is not None:
+                if self.reader_profiles.get(uuid, None) is None:
+                    self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
+                else:
+                    self.reader_profiles[uuid].new_read(reading_time)
 
-
+    @CheckEventRead
     def collect_document_readers(self, json: dict) -> None:
         """Collect document id and reader id information
 
@@ -333,6 +380,7 @@ class DataCollector:
         """
         document = json.get('subject_doc_id')
         uuid = json.get('visitor_uuid')
+
         if document is not None and uuid is not None:
             if self.document_readers.get(document, None) is None:
                 self.document_readers[document] = [uuid]

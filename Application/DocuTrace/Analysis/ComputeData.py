@@ -65,6 +65,12 @@ def continent_name(alpha2_country:str) -> str:
     return cont
     
 class ComputeData:
+    """Class to manage sorting and displaying data
+
+    Args:
+        data_collector (DataCollector): Instance of a DataCollector class, populated with dictionaries of data.
+        fig_size (tuple, optional): figure dimensions. Defaults to (8, 6).
+    """
     def __init__(self, data_collector, fig_size=(8, 6)):
         self.doc_locations = data_collector.doc_locations
         self.countries = data_collector.countries
@@ -224,6 +230,14 @@ class ComputeData:
 
 
     def histogram(self):
+        """Create a histogram based on the figure configuration property
+
+        Raises:
+            ValueError: When no figure configuration has been specified
+
+        Returns:
+            Figure: Returns a matplotlib Figure class
+        """
         if self.histo_config is not None:
             figure = self.histo_config
         else:
@@ -232,8 +246,24 @@ class ComputeData:
         return Charts(n_rows=len(figure[0]), figsize=self.fig_size).histogram(
             figure[0], figure[1], figure[2], figure[3])
 
+    def construct_document_counts_figure(self, doc_uuid: str, show_countries: bool = True, show_continents: bool = True, sorted: bool = True, reverse: bool = True, n_continents: int = None, n_countries: int= None):
+        """Build figures derived from a doc UUID
 
-    def construct_document_counts_figure(self, doc_uuid, show_countries=True, show_continents=True, sorted=True, reverse=True, n_continents=None, n_countries=None):
+        Args:
+            doc_uuid (str): The documnet UUID used to construct the figure
+            show_countries (bool, optional): Add the countries plot to the figure. Defaults to True.
+            show_continents (bool, optional): Add the continents plot to the figure. Defaults to True.
+            sorted (bool, optional): Sort the results. Defaults to True.
+            reverse (bool, optional): Sort asc or desc, True is desc. Defaults to True.
+            n_continents (int, optional): Select how many continents to show. Defaults to None.
+            n_countries (int, optional): Select how many countries to show. Defaults to None.
+
+        Raises:
+            InvalidDocUUIDError: When an invalid Document UUID is provided
+
+        Returns:
+            tuple: Tuple of figure config data to produce a histogram
+        """
         if sorted:
             self.sort(reverse)
 
@@ -272,6 +302,22 @@ class ComputeData:
 
 
     def construct_counts_figure(self, show_continents=True, show_countries=True, show_browsers=True, sorted=True, reverse=True, n_continents=None, n_countries=None, n_browsers=None, clean_browser_names=True):
+        """Construct the figure counts
+
+        Args:
+            show_continents (bool, optional): Include continent plot in the figure. Defaults to True.
+            show_countries (bool, optional): Include countries plot in the figure. Defaults to True.
+            show_browsers (bool, optional): Include browsers plot in the figure. Defaults to True.
+            sorted (bool, optional): Sort the results. Defaults to True.
+            reverse (bool, optional): Sort asc or desc, True is desc. Defaults to True.
+            n_continents (int, optional): Select how many continents to show. Defaults to None.
+            n_countries (int, optional): Select how many countries to show. Defaults to None.
+            n_browsers ([type], optional): Select how many browsers to show. Defaults to None.
+            clean_browser_names (bool, optional): Display more readable browser names. Defaults to True.
+
+        Returns:
+            tuple: Tuple of figure config data to produce a histogram
+        """
         if sorted:
             self.sort(reverse)
 
