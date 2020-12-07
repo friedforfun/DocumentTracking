@@ -307,12 +307,20 @@ The functions in this \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/Docu
 
 \subsection{Utils}
 \subsubsection{Exceptions}
+This \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Exceptions}{module} defines all the custom exceptions used in the application.
 
 \subsubsection{Logging}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Logging}{Logging} module supplies the basic config for the logger used throughout this application.
+It also supplies a convienience wrapper function to set the log level to DEBUG.
+
 
 \subsubsection{Tasks}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Tasks}{Tasks} module is the link between the Gui and the CLI, with functions to handle task selection, application exit conditions, and acquireing CLI arguments.
+It uses a similar pattern as the Gui for task selection, however this time it uses and \code{OrderedDict} class to enable functionality to move to the next task in order without restarting the program, when the \code{-e} parameter is not supplied.
 
 \subsubsection{Validation}
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Validation}{Validation} module has functions to handle input validation and path checking. Credit for the \code{is\_pathname\_valid()} function goes to Cecil Curry from \href{https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta}{this entertaining stack overflow post}.
+
 
 \section{Testing}
 % ------------------------------------------- TESTING ---------------------------------------------------------------
