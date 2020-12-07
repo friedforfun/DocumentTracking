@@ -37,7 +37,7 @@ def CheckEventReadtime(func):
         if type(json) is not dict:
             return
         event_type = json.get('event_type', None)
-        valid_events = ['read', 'pageread', 'pagereadtime']
+        valid_events = ['pagereadtime']
         if event_type in valid_events:
             return func(self, json, **kwargs)
         else:
@@ -59,7 +59,7 @@ def CheckEventRead(func):
         if type(json) is not dict:
             return
         event_type = json.get('event_type', None)
-        valid_events = ['read', 'pageread']
+        valid_events = ['read']
         if event_type in valid_events:
             return func(self, json, **kwargs)
         else:
@@ -363,13 +363,11 @@ class DataCollector:
         """
         reading_time = json.get('event_readtime')
         uuid = json.get('visitor_uuid')
-        event_type = json.get('event_type')
-        if event_type ==  'read':
-            if reading_time is not None and uuid is not None:
-                if self.reader_profiles.get(uuid, None) is None:
-                    self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
-                else:
-                    self.reader_profiles[uuid].new_read(reading_time)
+        if reading_time is not None and uuid is not None:
+            if self.reader_profiles.get(uuid, None) is None:
+                self.reader_profiles[uuid] = ReadingData(uuid, read_time=reading_time)
+            else:
+                self.reader_profiles[uuid].new_read(reading_time)
 
     @CheckEventRead
     def collect_document_readers(self, json: dict) -> None:

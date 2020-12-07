@@ -92,8 +92,8 @@ def parse_args():
     secondary_args.add_argument('-n', '--limit_data', help='Limits the number of displayed data points for tasks 2a, 2b, 3a, 3b, 4d, and 5.', type=int, required=False, default=None, const=20, nargs='?')
     secondary_args.add_argument('-v', '--verbose', type=int, required=False, default=30, nargs='?',
                                 const=20, help='Set the verbosity level, 20 for INFO, 10 for DEBUG. Default is 30: WARN')
-    secondary_args.add_argument('-e', '--exit_early', type=str2bool, default=False, const=True,
-                                nargs='?', help='Exit the program after running only the specified task.')
+    secondary_args.add_argument('-e', '--exit_early', type=str2bool, default=True, const=False,
+                                nargs='?', help='Continue the program after running only the specified task.')
     return parser.parse_args()
 
 
