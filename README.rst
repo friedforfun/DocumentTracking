@@ -88,5 +88,5 @@ Command line interface for DocuTrace.
                         
 -v VERBOSE, --verbose VERBOSE                   Set the verbosity level, 20 for INFO, 10 for DEBUG. Default is 30: WARN
                         
--e EXIT_EARLY, --exit_early EXIT_EARLY          Exit the program after running only the specified task.
+-e EXIT_EARLY, --exit_early EXIT_EARLY          Continue the program after running only the specified task.
                         
