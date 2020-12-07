@@ -324,7 +324,17 @@ The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#m
 
 \section{Testing}
 % ------------------------------------------- TESTING ---------------------------------------------------------------
-\emph{Show  the  results  for  testing  all  cases  and  prove  that  the  outputs  are  what  are  expected.Preferably,  use  unit  testing  to  test  core  functionality  of  the  implementation.   If  certain  conditionscause erroneous results or the application to crash then report these honestly.}
+
+Unit tests are included in the tests directory, this application was initially written in a test driven development manner, however only the core Analysis package code developed in this style due to time constraints. Pytest was used as the unit testing library, mainly because it requires less builerplate code than the Python built in Unittest library.
+
+\begin{figure}[h]
+    \includegraphics{pytest.png}
+    \caption{Tests running and passing}
+    \label{fig:pytest}
+\end{figure}
+
+The unit tests proved invaluable when working on the FileRead module with concurrency.
+There are some issues with input validation handling logic, many possible CLI parameters have not been extensively tested so it may be possible to open the GUI without the requisite parameters. 
 
 \section{Personal Development}
 % ------------------------------------------- PERSONAL DEVELOPMENT ---------------------------------------------------------------
@@ -332,34 +342,40 @@ The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#m
 Lessons learnt from the experience of CW1:
 Started out using test driven development
 
+\subsection{Code feedback}
 
-Feedback from CW1:
- --- code ---
-Less code duplication
-too much global state
-limited input validation
-no custom exceptions
-not restrictive enough access modifiers
+\begin{itemize}
+    \item Feedback: limited input validation - Considerably more input validation takes place, use of regex expressions and loops to allow users to re-enter data helps, however a more systematic approach would be better.
+    \item Feedback: Too much global state, not restrictive access modifiers - This has laregely been addressed, but this is due to the language shift, python doesnt use public/private access modifiers.
+    \item Feedback: No custom exceptions - Custom exceptions have been used for input validation, more custom exceptions could have been used but the descision was made to handle most exceptions right away using logic based around the \code{None} type (for the most part these are \code{KeyErrors}).
+    \item Feedback: No checks for arguments - Pythons duck typing system can make resolving this more complicated, explicit primative type stubs (although not enforeced) should provide hints to other developers when debugging, also in some cases the \code{hasattr()} function was used to try and test the correct argument type was provided.
+    \item Feedback: Too much code duplication - Some effort was made to reduce code duplication in the Gui by using methods to build repeated gui elements, there still exists some code duplication particularly in the DataCollector class. 
+\end{itemize}
 
---- report ---
-intro:
-    should cover short spec
-    cover goals
-    cover env
-
-dev section:
-    should discuss class dependencies
-    should discuss method interfaces := params/return, assumptions of args
-
-conclusion:
-    should discuss adv lang features
-
-
+\subsection{Report feedback}
+\begin{itemize}
+    \item Introduction
+        \begin{itemize}
+            \item Feedback: Should briefly cover the spec - The introduction features a brief description of the spec.
+            \item Feedback: Shoulc cover the goals - 
+            \item Feedback: Discuss environment - Detail about the environment has been included in the introduction, from expected operating system to user technical competency and expected kind of hardware.
+        \end{itemize}
+    \item Developer guide
+        \begin{itemize}
+            \item Feedback: Discuss class dependencies - Class interdepenencies have been mentioned, additionally provided documenation supplies extra detail on this topic.
+            \item Feedback: Discuss method interfaces - Some detail here, could include alot more but it feels somewhat redundant with the provided documentation and primative type stubs.
+        \end{itemize}
+    \item Conclusion
+        \begin{itemize}
+            \item Feeback: Should discuss advanced language features - 
+        \end{itemize}
+\end{itemize}
 
 
 \section{Conclusions}
 % ------------------------------------------- CONCLUSION ---------------------------------------------------------------
 \emph{Reflect on what you are most proud of in the application and what you’d have likedto have done differently.  You should reflect on the produced software, and compare software devel-opment in scripting vs.  systems languages.}
+
 Most proud of:
 - Concurrency during file reading
 - Structure of the code, good decoupling front and back end
@@ -368,6 +384,8 @@ Do differently:
 - Leave more time to work on the gui
 - Use a different library for the gui
 - subclass the datacollector class to break it into smaller tasks
+
+
 
 
 \pagebreak
