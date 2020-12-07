@@ -63,8 +63,12 @@
 
 \section{Introduction}
 The DocuTrace application is a moderate size, data-intensive application, its purpose is to analyse and display document tracking data from the website \href{https://issuu.com/}{issuu.com}. 
-The website hosts a substantial number of documents, and provides anonymised usage statistics, the data is provided in the form of a sequence of individual JSON entries seperated by new lines. 
+The website hosts a substantial number of documents, and provides anonymised usage statistics, the data is provided in the form of a sequence of individual JSON entries seperated by new lines.
 
+We make three assumptions based on the information from the dataset specification~\autocite{IssuuAnonymousDataset}, first that a read is triggered by a 'read' event type, 'pageread' is omitted because it seems there are instances of 'pageread' events that dont correspond to 'read' events, secondly, we assume that any event on a document constitutes a 'view' thus we gather a broader category of metrics when counting views by country/continent/browser than when computing reader profiles or 'Also likes' data, and finally we assume that 'readtime' is the exclusive event indicator for an event containing read time data when building reader profiles.
+
+This application aims to satisfy the task of processing this data according to these parameters while considering optimisations to speed up processing potentially very large files, while also providing a solid interface to visualise the data.
+It was also a priority to provide easily extendable code practices so that custom data collection strategies can be easily implemented.
 
 It is assumed the users of an application like DocuTrace would be someone with a high enough degree of technical competency to use simple Linux command line applications, the user would likely be a researcher (data science), or a business. 
 The prior assumption leads to the assumption that the hardware running this application would be closer to server class than standard consumer hardware with higher CPU core counts and alot more RAM.
@@ -275,7 +279,7 @@ A dictionary is used to associate a task identifying string with a function, thi
 
 The \code{Tab} class also manages interaction with the \code{ComputeData} class, by calling methods based on the tab context and passes the necessary parameters.
 
-\begin{figure}
+\begin{figure}[h]
     \begin{minted}[linenos,breaklines]{python}
         def __init__(self, compute_data, widget_fn=pass_fn, master=None, doc: str=None, user: str=None, n: int=None):
             super().__init__(master)
@@ -334,6 +338,8 @@ Unit tests are included in the tests directory, this application was initially w
 The unit tests proved invaluable when working on the FileRead module with concurrency.
 There are some issues with input validation handling logic, many possible CLI parameters have not been extensively tested so it may be possible to open the GUI without the requisite parameters. 
 
+Sometimes Numpy raises the ``FutureWarning: elementwise comparison failed'' warning, this is raised from line 157, 158 of the ComputeData module, the bug is inconsistent and not always easy to replicate, so fixing it has been challenging, it appears to be caused by using numpy boolean indexing to filter unwanted data from the \code{relevant\_docs} numpy array.
+
 \section{Personal Development}
 % ------------------------------------------- PERSONAL DEVELOPMENT ---------------------------------------------------------------
 \emph{A short discussion on lessons learnt from the feedback given on CW1and a discussion how you integrated this feedback into CW2.  Cover both coding and report writing,possibly more (project management, preparing for interview style questions etc).}
@@ -347,7 +353,7 @@ Started out using test driven development
     \item Feedback: Too much global state, not restrictive access modifiers - This has laregely been addressed, but this is due to the language shift, python doesnt use public/private access modifiers.
     \item Feedback: No custom exceptions - Custom exceptions have been used for input validation, more custom exceptions could have been used but the descision was made to handle most exceptions right away using logic based around the \code{None} type (for the most part these are \code{KeyErrors}).
     \item Feedback: No checks for arguments - Pythons duck typing system can make resolving this more complicated, explicit primative type stubs (although not enforeced) should provide hints to other developers when debugging, also in some cases the \code{hasattr()} function was used to try and test the correct argument type was provided.
-    \item Feedback: Too much code duplication - Some effort was made to reduce code duplication in the Gui by using methods to build repeated gui elements, there still exists some code duplication particularly in the DataCollector class. 
+    \item Feedback: Too much code duplication - Some effort was made to reduce code duplication in the Gui by using methods to build repeated gui elements, there still exists some code duplication particularly in the DataCollector class. This could be improved by creating a better class structure. 
 \end{itemize}
 
 \subsection{Report feedback}
@@ -355,7 +361,7 @@ Started out using test driven development
     \item Introduction
         \begin{itemize}
             \item Feedback: Should briefly cover the spec - The introduction features a brief description of the spec.
-            \item Feedback: Shoulc cover the goals - 
+            \item Feedback: Should cover the goals - 
             \item Feedback: Discuss environment - Detail about the environment has been included in the introduction, from expected operating system to user technical competency and expected kind of hardware.
         \end{itemize}
     \item Developer guide
@@ -374,18 +380,23 @@ Started out using test driven development
 % ------------------------------------------- CONCLUSION ---------------------------------------------------------------
 \emph{Reflect on what you are most proud of in the application and what you’d have likedto have done differently.  You should reflect on the produced software, and compare software devel-opment in scripting vs.  systems languages.}
 
+
+
 Most proud of:
 - Concurrency during file reading
-- Structure of the code, good decoupling front and back end
+- Structure of the code, good decoupling front and back end, and also interclass dependencies
 
 Do differently:
+- Better time management, too much time spent bug fixing custom concurrency implementation, libraries exist that could handle this in a faster more resource efficient manner such as the fileinput library~\autocite{FileinputIterateLines}
 - Leave more time to work on the gui
-- Use a different library for the gui
 - subclass the datacollector class to break it into smaller tasks
+- Should really provide an interface for an abstract datacollector, additionally make a base datacollector class to make extending the application with custom data collection methods easier.
 
 Adv lang features:
 Decorators, lazy iterators, Processes, higher order functions, dynamic (duck) typing
 
+Comparison between scripting and sys languages:
+Python as a hybrid language has scripting, oop and functional features, this flexibility is wonderful for rapid development, however it is a double edged sword
 
 \pagebreak
 \appendix
