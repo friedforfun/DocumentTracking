@@ -133,7 +133,7 @@ DocuTrace was written in Python 3, it is intended to be run on Ubuntu 20.04, and
         \hline
         Command-line usage & Provide a command line usage to test the application functionality in an automated way & \textbf{Essential} & Complete \\
         \hline
-        Display query history in GUI & Extend the gui to display a history of queries that allow navigation to past queies & Medium & Incomplete \\
+        Display query history in GUI & Extend the GUI to display a history of queries that allow navigation to past queies & Medium & Incomplete \\
         \hline
         Provide documentation & Generate and host documentation for the application & High & Complete \\ 
         \hline
@@ -159,15 +159,27 @@ A logger is used to handle debug, info, warning and exception messages. The logg
 
 \section{User Guide}
 %! ------------------------------------------- USER GUIDE ------------------------------------------------------------
-This application is started from the command line, all arguments are optional, but supplying at least a filepath and task id as parameters will speed up operation. For help a \code{-h} flag can be passed and the program will display all the parameters it can take with a description, see Fig.~\ref{fig:CLIOpts} for a listing of CLI options.
+
 \begin{figure}[h]
     \begin{minted}[breaklines]{bash}
-        docutrace [-h] [-u USER_UUID] [-d DOC_UUID] [-t TASK_ID] [-f FILEPATH] [-n [LIMIT_DATA]] [-v [VERBOSE]] [-e [EXIT_EARLY]]
+        $ docutrace [-h] [-u USER_UUID] [-d DOC_UUID] [-t TASK_ID] [-f FILEPATH] [-n [LIMIT_DATA]] [-v [VERBOSE]] [-e [EXIT_EARLY]]
+        $ ./Application/docutrace -f ../sample_data/sample_3m_lines.json -v -e -d 140213232558-bdd53a3a2ae91f2c5f951187668edd50 -t 6
     \end{minted}
-    \caption{CLI options}
+    \caption{Usage options followed by an example with parameters specified in this order: file path, Info level verbosity, exit immedietly on task completion, document uuid, and task id}
     \label{fig:CLIOpts}
 \end{figure}
 
+This application is started from the command line, all arguments are optional, but supplying at least a filepath and task id as parameters will speed up operation, any order of parameters is acceptable. 
+
+For help a \code{-h} flag can be passed and the program will display all the parameters it can take with a description, see Fig.~\ref{fig:CLIhelp} for a listing of CLI options and their descrptions.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{CLlhelp.png}
+    \caption{CLI parameter help}
+    \label{fig:CLIhelp}
+\end{figure}
 
 
 \section{Developer Guide}
@@ -180,15 +192,15 @@ More comprehensive type information could be added in the future by definig cust
 
 
 \subsection{Summary of application flow}
-This application can be broken down into 4 parts: Analysis, Gui, Utils packages and the main.py script; 
-main.py is the primary entrypoint of the application, Analysis module handles all the data processing needs of the application, Util provides convienience functions like logging, exceptions, validation and also a task selection script, and finally the Gui module handles all functionality related to the graphical user interface. 
+This application can be broken down into 4 parts: Analysis, GUI, Utils packages and the main.py script; 
+main.py is the primary entrypoint of the application, Analysis module handles all the data processing needs of the application, Util provides convienience functions like logging, exceptions, validation and also a task selection script, and finally the GUI module handles all functionality related to the graphical user interface. 
 
 The main entrypoint (DocuTrace/main.py) is a script to define the arguments, checks the validity of the filepath (a thread is started to begin processing the data right away) and task identifier from the command line, finally it starts the logic that parses the task and runs the given task once the data has finished processing.
 
 Once processing is finished the task is launched, this will open the GUI. 
-An instance of the ComputeData class is instantiated using the data obtained by the DataCollector class, it is then passed to the gui, this class handles all iteractions between the gui and the data.
+An instance of the ComputeData class is instantiated using the data obtained by the DataCollector class, it is then passed to the GUI, this class handles all iteractions between the GUI and the data.
 
-Once the gui opens the selected task should be visible on the screen, with the data visible, at this point new parameters for the various tasks can be provided to view other datapoints related to this task, or the number of instances displayed can be modified, depending on the task.
+Once the GUI opens the selected task should be visible on the screen, with the data visible, at this point new parameters for the various tasks can be provided to view other datapoints related to this task, or the number of instances displayed can be modified, depending on the task.
 
 \subsection{Analysis package}
 \subsubsection{FileRead}\label{sec:FileRead}
@@ -251,12 +263,12 @@ Next the numpy library is used to remove duplicated documents and the \code{get\
 Now that the data is prepared context managers are used to build 3 subgraphs, one to act as a graph legend, showing the readers and documents, \code{readers} places all the reader nodes in a horizontal row, and the \code{documents} context manager places all the document UUIDs horizonally below the readers.
 Finally we loop over all the edges found earlier and add them each to the graph.
 
-When we wish to display the graph in the Gui we use the \code{save\_view\_graph()} method to render and save the graph on the filesystem to be loaded and used as required.
+When we wish to display the graph in the GUI we use the \code{save\_view\_graph()} method to render and save the graph on the filesystem to be loaded and used as required.
 
-\subsection{Gui}
+\subsection{GUI}
 \subsubsection{main}
 The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Gui.html#module-DocuTrace.Gui.main}{main} module for the GUI, this module handles window cleanup on close, and configures an on tab changed event, it also programatically instantiates all the tabs to display and keeps a dictionary reference of them, see Fig.~\ref{fig:GuirootConstructor}. 
-Its primary purpose is to act as the root node of the tkinter gui, all other gui elements are encapsulated by this element.
+Its primary purpose is to act as the root node of the tkinter GUI, all other GUI elements are encapsulated by this element.
 
 \begin{figure}[h]
     \begin{minted}[linenos,breaklines]{python}
@@ -272,7 +284,7 @@ Its primary purpose is to act as the root node of the tkinter gui, all other gui
 \end{figure}
 
 \subsubsection{Tab}
-The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Gui.html#module-DocuTrace.Gui.Tab}{Tab} module handles the majority of the gui logic. The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Gui.html#DocuTrace.Gui.Tab.Tab}{\code{Tab}} class handles all the logic of constructing a tab in the gui.
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Gui.html#module-DocuTrace.Gui.Tab}{Tab} module handles the majority of the GUI logic. The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Gui.html#DocuTrace.Gui.Tab.Tab}{\code{Tab}} class handles all the logic of constructing a tab in the GUI.
 Upon instantiation it creates 3 fields that are used to store user input, see Fig.~\ref{fig:TabConstuctor}, the reference to these is passed as a parameter to the \code{Controls} class.
 The \code{widget\_fn} parameter is important, it dictates how the tab will render the \code{Controls} and \code{Content} frames, this function is called at the end of the constructor.
 A dictionary is used to associate a task identifying string with a function, this function is passed into the constructor when a Tab is instatiated in the main module, see Fig.~\ref{fig:GuirootConstructor}.
@@ -317,8 +329,8 @@ It also supplies a convienience wrapper function to set the log level to DEBUG.
 
 
 \subsubsection{Tasks}
-The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Tasks}{Tasks} module is the link between the Gui and the CLI, with functions to handle task selection, application exit conditions, and acquireing CLI arguments.
-It uses a similar pattern as the Gui for task selection, however this time it uses and \code{OrderedDict} class to enable functionality to move to the next task in order without restarting the program, when the \code{-e} parameter is not supplied.
+The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Tasks}{Tasks} module is the link between the GUI and the CLI, with functions to handle task selection, application exit conditions, and acquireing CLI arguments.
+It uses a similar pattern as the GUI for task selection, however this time it uses and \code{OrderedDict} class to enable functionality to move to the next task in order without restarting the program, when the \code{-e} parameter is not supplied.
 
 \subsubsection{Validation}
 The \href{https://www2.macs.hw.ac.uk/~sf52/DocuTrace/html/DocuTrace.Utils.html#module-DocuTrace.Utils.Validation}{Validation} module has functions to handle input validation and path checking. Credit for the \code{is\_pathname\_valid()} function goes to Cecil Curry from \href{https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta}{this entertaining stack overflow post}\autocite{FilesystemsCheckWhether}.
@@ -335,16 +347,18 @@ Unit tests are included in the tests directory, this application was initially w
     \label{fig:pytest}
 \end{figure}
 
-The unit tests proved invaluable when working on the FileRead module with concurrency.
+The unit tests proved invaluable when working on the FileRead module with concurrency, they quickly revealed bugs I would not have found for a long time otherwise.
 There are some issues with input validation handling logic, many possible CLI parameters have not been extensively tested so it may be possible to open the GUI without the requisite parameters. 
 
 Sometimes Numpy raises the ``FutureWarning: elementwise comparison failed'' warning, this is raised from line 157, 158 of the ComputeData module, the bug is inconsistent and not always easy to replicate, so fixing it has been challenging, it appears to be caused by using numpy boolean indexing to filter unwanted data from the \code{relevant\_docs} numpy array.
 
 \section{Personal Development}
 % ------------------------------------------- PERSONAL DEVELOPMENT ---------------------------------------------------------------
-\emph{A short discussion on lessons learnt from the feedback given on CW1and a discussion how you integrated this feedback into CW2.  Cover both coding and report writing,possibly more (project management, preparing for interview style questions etc).}
-Lessons learnt from the experience of CW1:
-Started out using test driven development
+\subsection{Lessons from CW1}
+When writing CW1 I waited until the full courswork had been implemented before I started writing unit tests, this highlighted for me many coupling issues in my codebase, this time I started out using test driven development, by writing the tests before writing the corresponding code.
+I would have liked to have maintained this development style thoughout but due to time constraints I had to drop writing systematic tests and worked instead on getting all the important requirements finished as soon as possible.
+When writing CW1 I wrote the back end code and front end in parallel, this also contributed to tight coupling, this time I did not touch the gui until I had finished all the business logic of the application.
+
 
 \subsection{Code feedback}
 
@@ -353,7 +367,7 @@ Started out using test driven development
     \item Feedback: Too much global state, not restrictive access modifiers - This has laregely been addressed, but this is due to the language shift, python doesnt use public/private access modifiers.
     \item Feedback: No custom exceptions - Custom exceptions have been used for input validation, more custom exceptions could have been used but the descision was made to handle most exceptions right away using logic based around the \code{None} type (for the most part these are \code{KeyErrors}).
     \item Feedback: No checks for arguments - Pythons duck typing system can make resolving this more complicated, explicit primative type stubs (although not enforeced) should provide hints to other developers when debugging, also in some cases the \code{hasattr()} function was used to try and test the correct argument type was provided.
-    \item Feedback: Too much code duplication - Some effort was made to reduce code duplication in the Gui by using methods to build repeated gui elements, there still exists some code duplication particularly in the DataCollector class. This could be improved by creating a better class structure. 
+    \item Feedback: Too much code duplication - Some effort was made to reduce code duplication in the GUI by using methods to build repeated GUI elements, there still exists some code duplication particularly in the DataCollector class. This could be improved by creating a better class structure. 
 \end{itemize}
 
 \subsection{Report feedback}
@@ -361,7 +375,7 @@ Started out using test driven development
     \item Introduction
         \begin{itemize}
             \item Feedback: Should briefly cover the spec - The introduction features a brief description of the spec.
-            \item Feedback: Should cover the goals - 
+            \item Feedback: Should cover the goals - Goals have been mentioned in the introduction section, maybe a little vague.
             \item Feedback: Discuss environment - Detail about the environment has been included in the introduction, from expected operating system to user technical competency and expected kind of hardware.
         \end{itemize}
     \item Developer guide
@@ -378,25 +392,26 @@ Started out using test driven development
 
 \section{Conclusions}
 % ------------------------------------------- CONCLUSION ---------------------------------------------------------------
-\emph{Reflect on what you are most proud of in the application and what you’d have likedto have done differently.  You should reflect on the produced software, and compare software devel-opment in scripting vs.  systems languages.}
 
 
+I feel fairly proud of the analysis package in general, concurrency in the FileRead package was interesting to implement, and was very satisfying when implemented using Processes to get around the GIL (global interpreter lock). 
+I felt decoupling the GUI and the back-end was done well, test driven development at the start of development and a total seperation of development time helped this decoupling, 
+Using a list of functions passed into FileRead felt like a solid choice, this made it trivial to go back and make small adjustments how the data was processed (for example adding checks for the event type), also adding new methods to process other metrics is trivial with this technique.
 
-Most proud of:
-- Concurrency during file reading
-- Structure of the code, good decoupling front and back end, and also interclass dependencies
+In future I would take the passing a method list form \code{DataCollector} to \code{FileRead} technique a step further by developing an interface (inherited from python ABC - Abstract Base Class) for a class that would replace each JSON processing method, that interface would require a method in the class with a fixed json parameter instead of just relying on other developers to correctly write the method signature.
 
-Do differently:
-- Better time management, too much time spent bug fixing custom concurrency implementation, libraries exist that could handle this in a faster more resource efficient manner such as the fileinput library~\autocite{FileinputIterateLines}
-- Leave more time to work on the gui
-- subclass the datacollector class to break it into smaller tasks
-- Should really provide an interface for an abstract datacollector, additionally make a base datacollector class to make extending the application with custom data collection methods easier.
+I had isues with time management with this project, particularly the concurrency implementation took a large proportion of development time, requiring sacrifices in other areas, time might have been better spent using a library such as fileinput~~\autocite{FileinputIterateLines} which may have reduced the complexity somewhat.
+The GUI especially suffered due to time management, alot of refinement had to be set aside to simply get it working in a reasonable manner.
+Tkinters documentation was somewhat frustrating because there appeared to be no easy to find singular source of detailed and exhaustive parameter listings for each class, the python documentation appeared to rely heavily on pre-existing knowledge of other language implementations of Tkinter, this felt unintuitive and made examples challenging to find. 
+Much of my Tkinter development time was sunk in a trial and error approach rather than my usual methodology when working with a new library; by systematically refering to the developer documentation to find the ideal classes for my usecase or to tweak parameters within clearly defined boundaries.
 
-Adv lang features:
-Decorators, lazy iterators, Processes, higher order functions, dynamic (duck) typing
+This application made use of many advanced language features, dynamic ("duck") typing was considered in many parts of the codebase (many parameters can expect a union of Some/None types), and type guard statements were used in conjuction with comparison operator overloading.
+Laziness in python is so simple to implement it may not be considered and advanced language feature, it was used with the file read iterator.
+Several classes overloaded the \code{\_\_add\_\_()} method to help merge dictionaries with the \code{+=} sign, and finally decorators were used in a number of locations to help reduce duplicated code.
 
-Comparison between scripting and sys languages:
-Python as a hybrid language has scripting, oop and functional features, this flexibility is wonderful for rapid development, however it is a double edged sword
+Python as a hybrid language has scripting, oop and functional features, this flexibility is wonderful for rapid development, however it is a double edged sword; bad practices can quickly creep into a code base, particularly when working in a time pressured environment.
+Python generally is very accomodating for the developer, but this can lead to more errors for the user.
+Pythons dynamic typing without additional documentation or type stubs can result in hard to read code for those unfamiliar with the code, systems languages tend to have much stronger type systems so more errors get caught at compile time and readability is usually better when the type of a parameter is explicit. 
 
 \pagebreak
 \appendix
