@@ -41,7 +41,8 @@ class Controls(ttk.Frame):
         user_uuid (str): The uuid of a user
         n (int): A number of elements to display, depends on context
     """
-    def __init__(self, parent, doc_uuid: str, user_uuid: str, n: int):
+
+    def __init__(self, parent, doc_uuid: tk.StringVar, user_uuid: tk.StringVar, n: tk.IntVar):
         super().__init__(parent, borderwidth=5, relief="sunken", width=500, height=80)
         self.doc_uuid = doc_uuid
         self.user_uuid = user_uuid
@@ -96,7 +97,8 @@ class Content(ttk.Frame):
         user_uuid (str): The uuid of a user
         n (int): A number of elements to display, depends on context
     """
-    def __init__(self, parent, doc_uuid, user_uuid, n):
+
+    def __init__(self, parent, doc_uuid: tk.StringVar, user_uuid: tk.StringVar, n: tk.IntVar):
         super().__init__(parent)
         self.parent = parent
         self.doc_uuid = doc_uuid

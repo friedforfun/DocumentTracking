@@ -5,7 +5,7 @@ from DocuTrace.Gui.Tab import Tab, tab_dict
 from DocuTrace.Utils.Logging import logger
 
 class GuiRoot(tk.Tk):
-    """[summary]
+    """Root GUI element, this class handles window size, instantiates the actual gui content and binds events to functions.
 
     Args:
         compute_data (ComputeData): An instance of the ComputeData class
@@ -47,6 +47,11 @@ class GuiRoot(tk.Tk):
 
 
     def on_tab_change(self, event):
+        """This method is called when a tab is changed, the event is passed as a parameter
+
+        Args:
+            event (tkinter.Event): This is the event object, holds details of the object that triggered this event.
+        """
         tab_name = event.widget.tab('current')['text']
         logger.debug('tab: {}'.format(tab_name))
         tab = self.tab_ref[tab_name]

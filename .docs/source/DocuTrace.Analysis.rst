@@ -4,14 +4,6 @@ DocuTrace.Analysis package
 Submodules
 ----------
 
-DocuTrace.Analysis.AbstractClasses module
------------------------------------------
-
-.. automodule:: DocuTrace.Analysis.AbstractClasses
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 DocuTrace.Analysis.ComputeData module
 -------------------------------------
 

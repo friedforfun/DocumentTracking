@@ -37,6 +37,14 @@ class Graphs:
 
 
     def save_view_graph(self, graph):
+        """Save the graph to the filesystem, used to render a graph on the GUI
+
+        Args:
+            graph (graphviz.Digraph): The graph to render and save
+
+        Returns:
+            str: The relative path to the saved graph image
+        """
         logger.debug('Graph file format: {}'.format(graph.format))
         #path = graph.save(filename=self.filename)
         path = graph.render(filename=self.filename, format=graph.format, cleanup=True, directory=WORK_DIR)

@@ -7,9 +7,7 @@ import regex
 from DocuTrace.Utils.Logging import logger
 from DocuTrace.Utils.Exceptions import InvalidPathError, InvalidTaskIDError, InvalidUserUUIDError, InvalidDocUUIDError
 
-"""Entertaining stack overflow post by Cecil Curry. Path validity checks use this. 
-https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta
-"""
+
 
 MAX_TRIES = 3
 user_regex = regex.compile(r"^[\da-fA-F]{16}$")
@@ -28,6 +26,9 @@ https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
 
 
 def is_pathname_valid(pathname: str) -> bool:
+    """Entertaining stack overflow post by Cecil Curry. Path validity checks use this. 
+        https://stackoverflow.com/questions/9532499/check-whether-a-path-is-valid-in-python-without-creating-a-file-at-the-paths-ta
+    """
     '''
     `True` if the passed pathname is a valid pathname for the current OS;
     `False` otherwise.
@@ -98,6 +99,17 @@ def is_pathname_valid(pathname: str) -> bool:
 
 
 def str2bool(v):
+    """Convienience function to convert a string to a bool
+
+    Args:
+        v (str): Any string
+
+    Raises:
+        argparse.ArgumentTypeError: A string was supplied that did not match a possible boolean value
+
+    Returns:
+        bool: True or False
+    """
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
