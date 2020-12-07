@@ -156,7 +156,7 @@ The potentially long loading times when procesing large datafiles motivated the 
 A logger is used to handle debug, info, warning and exception messages. The logger sends messages to stdout so they can be managed by journald, this includes exceptions and traceback messages this is a common practice and lets system admins handle the log output as they see fit. The verbosity of the log message can be set with the -v parameter, by default all messages of logging level WARNING and above are displayed.
 
 
-
+\newpage
 \section{User Guide}
 %! ------------------------------------------- USER GUIDE ------------------------------------------------------------
 
@@ -165,7 +165,7 @@ A logger is used to handle debug, info, warning and exception messages. The logg
         $ docutrace [-h] [-u USER_UUID] [-d DOC_UUID] [-t TASK_ID] [-f FILEPATH] [-n [LIMIT_DATA]] [-v [VERBOSE]] [-e [EXIT_EARLY]]
         $ ./Application/docutrace -f ../sample_data/sample_3m_lines.json -v -e -d 140213232558-bdd53a3a2ae91f2c5f951187668edd50 -t 6
     \end{minted}
-    \caption{Usage options followed by an example with parameters specified in this order: file path, Info level verbosity, exit immedietly on task completion, document uuid, and task id}
+    \caption{Usage options followed by an example with parameters specified in this order: file path, Info level verbosity, continue the application to run the next task on task completion, document uuid, and task id}
     \label{fig:CLIOpts}
 \end{figure}
 
@@ -180,11 +180,25 @@ For help a \code{-h} flag can be passed and the program will display all the par
     \caption{CLI parameter help}
     \label{fig:CLIhelp}
 \end{figure}
+\newpage
+\begin{enumerate}
+    \item Show button: Display the task information given the avaliable parameters
+    \item Number to display: Input box to adjust the number of visible elements
+    \item Doc \& user UUID: Input boxes for the Document and user UUIDs
+    \item Tab selection: Select the appropriate task from the tab selector
+    \item Content display area: All content to display given the parameters and the task will be displayed here.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Task6Tab.png}
+    \caption{CLI parameter help}
+    \label{fig:GraphAnnotated}
+\end{figure}
 
 
 \section{Developer Guide}
 % ------------------------------------------- DEVELOPER GUIDE -------------------------------------------------------
-\emph{Describe your application design and main areas of code in order to help another developer understand your work and how they might develop it. You may find it useful to supplementthe text with code fragments.}
 
 The provided documentation includes a definition of expected parameter types for all functions and methods. 
 Additionally primative type stubs have been added to the function and method signatures to improve readability.
@@ -349,6 +363,8 @@ Unit tests are included in the tests directory, this application was initially w
 
 The unit tests proved invaluable when working on the FileRead module with concurrency, they quickly revealed bugs I would not have found for a long time otherwise.
 There are some issues with input validation handling logic, many possible CLI parameters have not been extensively tested so it may be possible to open the GUI without the requisite parameters. 
+
+Additionally the also likes functionality has a bug where sometimes on launch it includes an extra document that should not be there. 
 
 Sometimes Numpy raises the ``FutureWarning: elementwise comparison failed'' warning, this is raised from line 157, 158 of the ComputeData module, the bug is inconsistent and not always easy to replicate, so fixing it has been challenging, it appears to be caused by using numpy boolean indexing to filter unwanted data from the \code{relevant\_docs} numpy array.
 
